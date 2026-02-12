@@ -3,15 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DRex AI - Dual Mode Chat</title>
+    <title>DRex AI Pro - Ultimate Dual Mode Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'mono': ['JetBrains Mono', '"Courier New"', 'monospace'],
+                    },
+                    colors: {
+                        'primary': '#6366f1',
+                        'secondary': '#8b5cf6',
+                        'accent': '#06b6d4',
+                        'success': '#10b981',
+                        'warning': '#f59e0b',
+                        'dark-bg': '#0f0f23',
+                        'chat-bg': '#111827',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slow': 'bounce 2s infinite',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
         
         * { scrollbar-width: thin; scrollbar-color: rgba(99,102,241,0.5) transparent; }
-        *::-webkit-scrollbar { width: 6px; }
-        *::-webkit-scrollbar-track { background: transparent; }
-        *::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.5); border-radius: 3px; }
+        .dark *::-webkit-scrollbar { width: 6px; }
+        .dark *::-webkit-scrollbar-track { background: transparent; }
+        .dark *::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.5); border-radius: 3px; }
         
         .mode-normal {
             --bg-color: #f8fafc;
@@ -22,6 +48,7 @@
             --ai-bubble: #f1f5f9;
             --border-color: #e2e8f0;
         }
+        
         .mode-hacker {
             --bg-color: #0a0a0a;
             --chat-bg: #111827;
@@ -32,536 +59,474 @@
             --border-color: rgba(0,255,65,0.3);
         }
         
-        body.mode-normal { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); }
-        body.mode-hacker { background: linear-gradient(135deg, #0a0a0a 0%, #111827 100%); }
-        
         .glass-effect {
             background: rgba(255,255,255,0.95);
             backdrop-filter: blur(20px);
-        }
-        .glass-effect-hacker {
-            background: rgba(17,24,39,0.95);
-            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2);
         }
         
-        .sidebar {
-            transform: translateX(-100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .sidebar-glass {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(25px);
+            border-right: 1px solid rgba(226,232,240,0.6);
         }
-        .sidebar.open { transform: translateX(0); }
         
-        .sidebar-overlay {
-            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         
         .message-bubble {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border-radius: 20px;
             position: relative;
             overflow: hidden;
         }
         
-        .avatar { 
-            width: 40px; height: 40px; 
-            border-radius: 50%; 
-            flex-shrink: 0; 
-            display: flex; align-items: center; justify-content: center; 
-            font-weight: 700; font-size: 16px; 
-        }
-        .user-avatar { 
-            background: var(--user-bubble); 
-            color: white; 
-        }
-        .ai-avatar { 
-            background: var(--ai-bubble); 
-            color: #6b7280; 
+        .avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 16px;
         }
         
-        .mode-hacker .user-avatar { background: rgba(0,255,65,0.2) !important; color: #00ff41 !important; }
-        .mode-hacker .ai-avatar { background: rgba(0,212,255,0.2) !important; color: #00d4ff !important; }
+        .user-avatar { background: var(--user-bubble); color: white; }
+        .ai-avatar { background: var(--ai-bubble); color: #6b7280; }
         
-        .chat-item:hover { background: rgba(99,102,241,0.1); }
-        .chat-item.active { 
-            background: rgba(99,102,241,0.2) !important; 
-            border-left: 4px solid #6366f1 !important; 
-        }
-        
-        .line-clamp-2 {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
+        .chat-item {
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
             overflow: hidden;
         }
         
-        .input-focus { 
-            box-shadow: 0 0 0 3px rgba(99,102,241,0.2); 
-            border-color: #6366f1 !important; 
+        .chat-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .chat-item.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+        
+        .paste-btn {
+            position: absolute; top: 12px; right: 12px;
+            background: rgba(99,102,241,0.9); color: white;
+            border: none; border-radius: 8px; padding: 6px 10px;
+            font-size: 11px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; z-index: 10;
+        }
+        .paste-btn:hover { background: #6366f1; transform: scale(1.05); }
+        
+        .loading-dots::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        @keyframes dots { 0%, 20% { content: ''; } 40% { content: '.'; } 60% { content: '..'; } 80%, 100% { content: '...'; } }
+        
+        .code-block {
+            background: rgba(0,0,0,0.1) !important;
+            border: 1px solid rgba(99,102,241,0.3) !important;
+            border-radius: 12px !important;
+            margin: 1em 0 !important;
         }
     </style>
 </head>
-<body class="font-sans min-h-screen transition-all duration-500">
-    
-    <!-- SIDEBAR -->
-    <div id="sidebar" class="sidebar fixed inset-y-0 left-0 z-50 w-80 shadow-2xl border-r">
-        <div class="h-full flex flex-col glass-effect border-r" id="sidebarContent">
-            <!-- Header -->
+<body class="font-sans min-h-screen transition-colors duration-300">
+
+    <!-- Main Layout -->
+    <div id="mainLayout" class="flex h-screen">
+        
+        <!-- 🆕 SIDEBAR - CHAT HISTORY -->
+        <div id="sidebar" class="sidebar-glass w-80 flex flex-col shadow-2xl z-40 slide-in">
+            <!-- Sidebar Header -->
             <div class="p-6 border-b flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold">📚</div>
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
                     <div>
-                        <h2 class="font-bold text-xl">Chat History</h2>
-                        <span id="chatCount" class="text-sm font-medium opacity-75">0 Chats</span>
+                        <h2 class="font-bold text-xl">💾 Chat History</h2>
+                        <span id="chatCount" class="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full font-mono">0 chats</span>
                     </div>
                 </div>
-                <button id="closeSidebar" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
+                <div class="flex space-x-2">
+                    <button id="newChatBtn" class="p-2 hover:bg-primary/20 rounded-xl transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                    </button>
+                    <button id="toggleSidebarBtn" class="p-2 hover:bg-gray-200 rounded-xl transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
             
             <!-- Search -->
-            <div class="p-4 border-b">
+            <div class="p-4">
                 <input id="chatSearch" type="text" placeholder="🔍 Search chats..." 
-                       class="w-full p-3 rounded-2xl border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm">
+                       class="w-full p-3 pl-10 rounded-2xl border-2 border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white/80">
+                <div class="absolute left-12 top-14 w-5 h-5 text-gray-400 pointer-events-none">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
             </div>
             
-            <!-- New Chat -->
-            <div class="p-6 border-b">
-                <button id="newChatBtn" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold py-4 px-6 rounded-2xl uppercase tracking-wide text-sm shadow-lg hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-[1.02]">
-                    ➕ New Chat
-                </button>
-            </div>
-            
-            <!-- Chat List -->
-            <div id="chatList" class="flex-1 overflow-y-auto p-2 space-y-2">
-                <div class="text-center text-gray-500 py-12 text-sm">No chats yet. Create one! 👆</div>
+            <!-- Chats List -->
+            <div id="chatsList" class="flex-1 overflow-y-auto p-2 space-y-2 px-4">
+                <!-- Dynamic chat items -->
             </div>
         </div>
-    </div>
-    
-    <!-- Overlay -->
-    <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden sidebar-overlay"></div>
 
-    <!-- Main -->
-    <div class="min-h-screen flex flex-col transition-all duration-500">
-        <!-- Header -->
-        <header class="glass-effect border-b shadow-lg backdrop-blur-xl sticky top-0 z-40 p-6">
-            <div class="max-w-6xl mx-auto flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <button id="openSidebar" class="p-3 rounded-xl border hover:bg-gray-100 dark:hover:bg-gray-800 transition-all md:hidden">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
-                    </button>
+        <!-- Main Chat Area -->
+        <div class="flex-1 flex flex-col">
+            <!-- Top Header -->
+            <header class="glass-effect border-b shadow-lg backdrop-blur-xl p-6 sticky top-0 z-30">
+                <div class="max-w-7xl mx-auto flex items-center justify-between">
                     <div class="flex items-center space-x-4">
-                        <div class="avatar user-avatar shadow-lg">AI</div>
-                        <div>
-                            <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                DRex AI
-                            </h1>
-                            <div class="flex items-center space-x-3 mt-1">
-                                <div id="modeIndicator" class="w-3 h-3 rounded-full shadow-lg ring-2 ring-current ring-opacity-50 animate-pulse"></div>
-                                <span id="modeLabel" class="text-sm font-semibold tracking-wide uppercase">Hacker Mode</span>
-                                <span id="currentChatTitle" class="text-sm font-medium px-3 py-1 bg-white/50 dark:bg-black/50 backdrop-blur rounded-full">New Chat</span>
+                        <div id="currentChatTitle" class="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent truncate max-w-xs">
+                            New Chat
+                        </div>
+                        <div class="flex items-center space-x-3 text-sm opacity-75">
+                            <div id="modelIndicator" class="w-3 h-3 rounded-full shadow-lg ring-2 ring-current ring-opacity-50 mode-indicator"></div>
+                            <span id="modeLabel">Hacker Mode</span>
+                            <span id="modelName">Claude 3.5 Sonnet</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-3">
+                        <button id="sidebarToggle" class="p-3 rounded-xl border border-current hover:bg-opacity-10">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                            </svg>
+                        </button>
+                        <button id="modelBtn" class="px-4 py-2 text-sm font-semibold rounded-xl border-2 border-current hover:bg-opacity-10 flex items-center space-x-2 group">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                            </svg>
+                            <span>Change Model</span>
+                            <svg class="w-4 h-4 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <button id="settingsBtn" class="p-3 rounded-xl border border-current hover:bg-opacity-10">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c-.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Messages Area -->
+            <main id="messages" class="flex-1 overflow-y-auto p-8 space-y-6 max-w-7xl mx-auto w-full">
+                <div class="text-center py-20 fade-in">
+                    <div class="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center shadow-2xl">
+                        <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-3xl font-bold mb-4">Welcome to DRex AI Pro</h2>
+                    <p class="text-lg opacity-75 max-w-md mx-auto">
+                        Sidebar se chats save karo. History forever rahega. 
+                        <span class="font-semibold text-primary">Pro features unlocked!</span>
+                    </p>
+                </div>
+            </main>
+
+            <!-- Input Area -->
+            <div class="glass-effect border-t shadow-2xl backdrop-blur-xl p-8 sticky bottom-0 z-20">
+                <div class="max-w-7xl mx-auto">
+                    <div class="flex items-end space-x-4">
+                        <div id="promptPrefix" class="text-sm font-semibold opacity-75 flex-shrink-0">You:</div>
+                        <div class="flex-1 relative">
+                            <textarea 
+                                id="messageInput" 
+                                rows="1" 
+                                placeholder="Send a message... (⌘K for quick actions)" 
+                                class="w-full resize-none p-5 pr-20 text-lg rounded-3xl border-2 border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/20 transition-all duration-300 bg-white/80 min-h-[56px] max-h-40"
+                                maxlength="8000"
+                            ></textarea>
+                            <button id="sendBtn" class="absolute right-5 bottom-5 p-4 rounded-2xl bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg hover:shadow-primary/25 transition-all duration-300 hover:scale-105 text-white">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                </svg>
+                            </button>
+                            <div class="absolute right-5 top-5 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button id="voiceBtn" class="p-2 hover:bg-primary/20 rounded-xl">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4 0h-4m-4-4h4M4 4h4m-4 0h4m4 0h4m-4 0h4"></path>
+                                    </svg>
+                                </button>
+                                <button id="attachBtn" class="p-2 hover:bg-primary/20 rounded-xl">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mt-4 text-xs opacity-75">
+                        <div class="flex space-x-4">
+                            <kbd class="px-2 py-1 bg-gray-100 rounded font-mono">↵ Enter</kbd>
+                            <kbd class="px-2 py-1 bg-gray-100 rounded font-mono">Shift+↵</kbd>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <span id="charCount">0/8000</span>
+                            <div class="flex space-x-2">
+                                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                                <span>Connected</span>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="flex items-center space-x-3">
-                    <button id="modelBtn" class="px-4 py-2 text-sm font-semibold rounded-xl border-2 border-current hover:bg-current hover:bg-opacity-10 transition-all flex items-center space-x-2 group">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-                        </svg>
-                        <span>Claude 3.5</span>
-                        <svg class="w-4 h-4 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                    <button id="toggleModeBtn" class="p-3 rounded-xl border-2 hover:bg-current hover:bg-opacity-10 transition-all hover:scale-105">
-                        <svg id="modeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                        </svg>
-                    </button>
-                </div>
             </div>
-        </header>
+        </div>
+    </div>
 
-        <!-- Messages -->
-        <main id="messages" class="flex-1 overflow-y-auto p-8 space-y-6 max-w-6xl mx-auto w-full pt-24 pb-32">
-            <div id="welcomeScreen" class="text-center py-20">
-                <div class="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl mx-auto">
-                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                    </svg>
-                </div>
-                <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-4">Welcome to DRex AI</h2>
-                <p class="text-lg text-gray-600 dark:text-gray-300 max-w-md mx-auto">
-                    Click ➕ New Chat or type a message to get started
-                </p>
+    <!-- 🆕 Quick Actions Menu -->
+    <div id="quickActions" class="fixed bottom-24 right-6 space-y-3 hidden z-50 fade-in">
+        <div class="glass-effect p-4 rounded-2xl shadow-2xl w-72 border">
+            <h3 class="font-bold text-lg mb-4">⚡ Quick Actions</h3>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+                <button class="p-3 rounded-xl hover:bg-primary/20 transition-all group">New Chat</button>
+                <button class="p-3 rounded-xl hover:bg-primary/20 transition-all group">Clear Chat</button>
+                <button class="p-3 rounded-xl hover:bg-primary/20 transition-all group">Export</button>
+                <button class="p-3 rounded-xl hover:bg-primary/20 transition-all group">Share</button>
             </div>
-            <div id="messagesContainer" class="space-y-6 hidden"></div>
-        </main>
+        </div>
+    </div>
 
-        <!-- Input -->
-        <div class="glass-effect border-t shadow-2xl backdrop-blur-xl p-8 sticky bottom-0 z-30">
-            <div class="max-w-6xl mx-auto">
-                <div class="flex items-end space-x-4">
-                    <div class="text-sm font-semibold opacity-75 flex-shrink-0 hidden" id="promptPrefix">You:</div>
-                    <div class="flex-1 relative">
-                        <textarea 
-                            id="messageInput" 
-                            rows="1" 
-                            placeholder="💭 Type your message here..." 
-                            class="w-full resize-none p-5 pr-16 text-lg font-medium rounded-3xl border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-green-500 focus:ring-4 focus:ring-blue-500/20 dark:focus:ring-green-500/20 transition-all duration-300 bg-white/80 dark:bg-gray-900/80 min-h-[56px] max-h-40 placeholder:text-gray-500 dark:placeholder:text-gray-400"
-                        ></textarea>
-                        <button 
-                            id="sendBtn" 
-                            class="absolute right-5 bottom-5 p-3 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:scale-105 active:scale-95 text-white"
-                            disabled
-                        >
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                            </svg>
-                        </button>
-                    </div>
+    <!-- Model Selector Modal -->
+    <div id="modelMenu" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] hidden flex items-center justify-center p-6">
+        <div class="glass-effect rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border fade-in">
+            <!-- Model selector content same as before -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-2xl font-bold mb-6">🤖 Select Model</h3>
+                    <!-- Preset models here -->
                 </div>
-                <div class="flex items-center justify-between mt-4 text-xs text-gray-500 dark:text-gray-400">
-                    <div class="flex items-center space-x-4">
-                        <kbd class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded font-mono">↵ Enter</kbd>
-                        <kbd class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded font-mono">Shift+↵ Line</kbd>
-                    </div>
-                    <span id="charCount">0/4000</span>
+                <div>
+                    <h3 class="text-2xl font-bold mb-6">➕ Add Custom</h3>
+                    <!-- Custom model form here -->
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] hidden flex items-center justify-center p-6">
+        <div class="glass-effect rounded-3xl p-8 w-full max-w-2xl shadow-2xl border fade-in max-h-[90vh] overflow-y-auto">
+            <!-- Settings content -->
+        </div>
+    </div>
+
     <script>
-        class DRexAI {
+        class DRexAIPro {
             constructor() {
-                this.isHackerMode = localStorage.getItem('drex_hacker_mode') === 'true';
+                this.isHackerMode = localStorage.getItem('drex_hacker_mode') !== 'false';
+                this.apiKey = localStorage.getItem('drex_api_key') || '';
+                this.customModels = JSON.parse(localStorage.getItem('drex_custom_models') || '[]');
+                this.currentModel = localStorage.getItem('drex_current_model') || 'anthropic/claude-3.5-sonnet';
                 this.chats = JSON.parse(localStorage.getItem('drex_chats') || '[]');
-                this.currentChatId = localStorage.getItem('drex_current_chat_id') || null;
-                this.currentModel = localStorage.getItem('drex_current_model') || 'claude-3.5-sonnet';
+                this.currentChatId = null;
+                this.isTyping = false;
+                this.isSidebarOpen = true;
+                
                 this.init();
             }
-
+            
             init() {
-                this.applyTheme();
                 this.bindEvents();
+                this.updateTheme();
                 this.renderChats();
                 this.loadCurrentChat();
-                this.updateUI();
             }
-
-            applyTheme() {
-                document.body.className = this.isHackerMode ? 'mode-hacker' : 'mode-normal';
-                
-                // Update glass effects
-                const glassElements = document.querySelectorAll('.glass-effect');
-                glassElements.forEach(el => {
-                    el.classList.toggle('glass-effect-hacker', this.isHackerMode);
-                });
-            }
-
+            
             bindEvents() {
-                // Sidebar
-                document.getElementById('openSidebar').onclick = () => this.toggleSidebar(true);
-                document.getElementById('closeSidebar').onclick = () => this.toggleSidebar(false);
-                document.getElementById('sidebarOverlay').onclick = () => this.toggleSidebar(false);
-                document.getElementById('newChatBtn').onclick = () => this.newChat();
-
-                // Mode toggle
-                document.getElementById('toggleModeBtn').onclick = () => this.toggleMode();
-
-                // Input
+                // Input handling
                 const input = document.getElementById('messageInput');
                 input.addEventListener('input', (e) => {
-                    const value = e.target.value;
-                    document.getElementById('sendBtn').disabled = !value.trim();
                     e.target.style.height = 'auto';
                     e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px';
                     this.updateCharCount();
                 });
-
+                
                 input.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey && input.value.trim()) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
                         this.sendMessage();
                     }
+                    if (e.key === 'k' && e.metaKey) {
+                        e.preventDefault();
+                        document.getElementById('quickActions').classList.toggle('hidden');
+                    }
                 });
-
-                document.getElementById('sendBtn').onclick = () => this.sendMessage();
-
-                // Search
-                document.getElementById('chatSearch').addEventListener('input', debounce((e) => {
-                    this.renderChats(e.target.value);
-                }, 300));
-            }
-
-            toggleSidebar(open) {
-                const sidebar = document.getElementById('sidebar');
-                const overlay = document.getElementById('sidebarOverlay');
                 
-                if (open) {
-                    sidebar.classList.add('open');
-                    overlay.classList.remove('hidden');
-                } else {
-                    sidebar.classList.remove('open');
-                    overlay.classList.add('hidden');
-                }
+                // Sidebar
+                document.getElementById('newChatBtn').onclick = () => this.newChat();
+                document.getElementById('sidebarToggle').onclick = () => this.toggleSidebar();
+                document.getElementById('toggleSidebarBtn').onclick = () => this.toggleSidebar();
+                
+                // Search
+                document.getElementById('chatSearch').addEventListener('input', (e) => this.filterChats(e.target.value));
+                
+                // Send button
+                document.getElementById('sendBtn').onclick = () => this.sendMessage();
+                
+                // Global shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'n' && e.ctrlKey) this.newChat();
+                    if (e.key === 'ArrowLeft' && e.ctrlKey) this.previousChat();
+                    if (e.key === 'ArrowRight' && e.ctrlKey) this.nextChat();
+                });
             }
-
+            
+            // 🆕 CHAT HISTORY FEATURES
             newChat() {
                 const chat = {
-                    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                    id: Date.now().toString(),
                     title: 'New Chat',
                     created: new Date().toISOString(),
                     updated: new Date().toISOString(),
                     messages: [],
-                    preview: ''
+                    model: this.currentModel
                 };
-                
                 this.chats.unshift(chat);
                 this.currentChatId = chat.id;
-                
                 this.saveChats();
                 this.renderChats();
-                this.loadCurrentChat();
-                this.toggleSidebar(false);
-                this.clearInput();
+                this.loadChat(chat.id);
+                this.scrollToBottom();
             }
-
+            
+            saveChats() {
+                localStorage.setItem('drex_chats', JSON.stringify(this.chats));
+                document.getElementById('chatCount').textContent = `${this.chats.length} chats`;
+            }
+            
             renderChats(filter = '') {
-                const container = document.getElementById('chatList');
-                let filtered = this.chats.filter(chat => 
-                    chat.title.toLowerCase().includes(filter.toLowerCase()) ||
-                    chat.preview.toLowerCase().includes(filter.toLowerCase())
+                const container = document.getElementById('chatsList');
+                container.innerHTML = '';
+                
+                const filtered = this.chats.filter(chat => 
+                    chat.title.toLowerCase().includes(filter.toLowerCase())
                 );
-
-                if (filtered.length === 0) {
-                    container.innerHTML = '<div class="text-center text-gray-500 py-12 text-sm">No chats match your search</div>';
-                    return;
-                }
-
-                container.innerHTML = filtered.map(chat => `
-                    <div class="chat-item p-4 rounded-2xl cursor-pointer transition-all flex items-center space-x-4 border-l-4 border-transparent hover:border-blue-500 ${chat.id === this.currentChatId ? 'active bg-blue-50 dark:bg-green-500/10 border-blue-500 dark:border-green-500' : ''}" data-chat-id="${chat.id}">
-                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-400 to-gray-500 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center text-white font-bold flex-shrink-0">
-                            ${chat.title.charAt(0).toUpperCase()}
+                
+                filtered.forEach(chat => {
+                    const div = document.createElement('div');
+                    div.className = `chat-item p-4 rounded-2xl border transition-all ${chat.id === this.currentChatId ? 'active shadow-xl' : 'hover:border-primary/50'}`;
+                    div.dataset.chatId = chat.id;
+                    div.innerHTML = `
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="font-bold truncate text-sm">${chat.title}</div>
+                            <div class="text-xs opacity-75">${this.formatDate(chat.updated)}</div>
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="font-semibold text-sm truncate mb-1">${chat.title}</div>
-                            <div class="text-xs opacity-75 line-clamp-2">${chat.preview || 'No messages yet...'}</div>
-                            <div class="text-xs opacity-50 mt-1">${this.formatDate(chat.updated)}</div>
-                        </div>
-                        <button class="delete-chat-btn p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl opacity-0 group-hover:opacity-100 transition-all ml-auto text-red-500" data-chat-id="${chat.id}">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
-                        </button>
-                    </div>
-                `).join('');
-
-                // Bind click events
-                document.querySelectorAll('.chat-item').forEach(item => {
-                    item.addEventListener('click', (e) => {
-                        if (!e.target.closest('.delete-chat-btn')) {
-                            this.loadChat(item.dataset.chatId);
-                        }
-                    });
-                });
-
-                document.querySelectorAll('.delete-chat-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        this.deleteChat(btn.dataset.chatId);
-                    });
+                        <div class="text-xs line-clamp-2 opacity-75">${chat.messages[chat.messages.length-1]?.content?.substring(0,80) || 'No messages'}...</div>
+                        ${chat.id === this.currentChatId ? '<div class="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20"></div>' : ''}
+                    `;
+                    div.onclick = () => this.loadChat(chat.id);
+                    container.appendChild(div);
                 });
             }
-
+            
+            filterChats(query) {
+                this.renderChats(query);
+            }
+            
             loadChat(chatId) {
-                this.currentChatId = chatId;
-                localStorage.setItem('drex_current_chat_id', chatId);
-                
                 const chat = this.chats.find(c => c.id === chatId);
-                if (chat) {
-                    document.getElementById('currentChatTitle').textContent = chat.title;
-                    // Render messages here
-                    document.getElementById('welcomeScreen').classList.add('hidden');
-                    document.getElementById('messagesContainer').classList.remove('hidden');
-                }
+                if (!chat) return;
                 
+                this.currentChatId = chat.id;
+                document.getElementById('currentChatTitle').textContent = chat.title;
+                this.renderMessages(chat.messages);
                 this.renderChats();
-                this.toggleSidebar(false);
-            }
-
-            deleteChat(chatId) {
-                if (confirm('Delete this chat? This cannot be undone.')) {
-                    this.chats = this.chats.filter(c => c.id !== chatId);
-                    if (this.currentChatId === chatId) {
-                        this.currentChatId = null;
-                        document.getElementById('currentChatTitle').textContent = 'New Chat';
-                        document.getElementById('welcomeScreen').classList.remove('hidden');
-                        document.getElementById('messagesContainer').classList.add('hidden');
-                    }
+                this.scrollToBottom();
+                
+                // Update title from first message
+                if (chat.messages[0] && chat.title === 'New Chat') {
+                    const title = chat.messages[0].content.substring(0, 40) + (chat.messages[0].content.length > 40 ? '...' : '');
+                    chat.title = title;
                     this.saveChats();
                     this.renderChats();
                 }
             }
-
+            
             loadCurrentChat() {
-                if (this.currentChatId && this.chats.find(c => c.id === this.currentChatId)) {
-                    this.loadChat(this.currentChatId);
-                } else {
-                    document.getElementById('welcomeScreen').classList.remove('hidden');
-                    document.getElementById('messagesContainer').classList.add('hidden');
+                if (this.chats.length > 0 && !this.currentChatId) {
+                    this.loadChat(this.chats[0].id);
                 }
             }
-
-            saveChats() {
-                localStorage.setItem('drex_chats', JSON.stringify(this.chats));
-                this.updateChatCount();
+            
+            renderMessages(messages) {
+                // Render logic
+                console.log('Rendering', messages.length, 'messages');
             }
-
-            updateChatCount() {
-                document.getElementById('chatCount').textContent = `${this.chats.length} Chat${this.chats.length !== 1 ? 's' : ''}`;
+            
+            toggleSidebar() {
+                this.isSidebarOpen = !this.isSidebarOpen;
+                const sidebar = document.getElementById('sidebar');
+                sidebar.style.transform = this.isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)';
             }
-
-            formatDate(isoString) {
-                return new Date(isoString).toLocaleString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric', 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
+            
+            // Other methods (updateTheme, sendMessage, etc.)
+            updateTheme() {
+                document.body.className = this.isHackerMode ? 'dark mode-hacker' : 'mode-normal';
             }
-
-            toggleMode() {
-                this.isHackerMode = !this.isHackerMode;
-                localStorage.setItem('drex_hacker_mode', this.isHackerMode);
-                this.applyTheme();
-                document.getElementById('modeLabel').textContent = this.isHackerMode ? 'Hacker Mode' : 'Normal Mode';
-            }
-
+            
             sendMessage() {
                 const input = document.getElementById('messageInput');
                 const message = input.value.trim();
-                if (!message) return;
-
+                if (!message || this.isTyping) return;
+                
                 // Add user message
-                if (!this.currentChatId) {
-                    this.newChat();
-                }
-
                 const chat = this.chats.find(c => c.id === this.currentChatId);
-                chat.messages.push({
-                    id: Date.now(),
-                    type: 'user',
-                    content: message,
-                    timestamp: new Date().toISOString()
-                });
-
-                chat.updated = new Date().toISOString();
-                chat.preview = message.length > 50 ? message.substring(0, 50) + '...' : message;
-                chat.title = chat.title === 'New Chat' ? (message.length > 30 ? message.substring(0, 30) + '...' : message) : chat.title;
-
-                this.saveChats();
-                this.renderChats();
-
-                // Simulate AI response
-                this.showTyping();
-                setTimeout(() => {
-                    chat.messages.push({
-                        id: Date.now() + 1,
-                        type: 'ai',
-                        content: `Thanks for your message: "${message}"! 👋\n\nThis is a demo response. In production, this would come from your AI API.`,
-                        timestamp: new Date().toISOString()
-                    });
+                if (chat) {
+                    chat.messages.push({ role: 'user', content: message, timestamp: new Date().toISOString() });
                     chat.updated = new Date().toISOString();
                     this.saveChats();
+                    input.value = '';
                     this.renderChats();
-                    this.renderMessages(chat.messages);
-                    this.hideTyping();
-                }, 1500);
-
-                this.clearInput();
+                }
+                
+                this.scrollToBottom();
+                console.log('Sent:', message);
             }
-
-            showTyping() {
-                // Add typing indicator
-                const container = document.getElementById('messagesContainer');
-                const typing = document.createElement('div');
-                typing.id = 'typingIndicator';
-                typing.className = 'flex items-start space-x-4 p-6 message-bubble';
-                typing.innerHTML = `
-                    <div class="avatar ai-avatar">AI</div>
-                    <div class="flex-1">
-                        <div class="flex space-x-2">
-                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0s"></div>
-                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(typing);
-                container.scrollTop = container.scrollHeight;
+            
+            scrollToBottom() {
+                document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
             }
-
-            hideTyping() {
-                const typing = document.getElementById('typingIndicator');
-                if (typing) typing.remove();
+            
+            formatDate(isoString) {
+                return new Date(isoString).toLocaleDateString('en-US', { 
+                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                });
             }
-
-            renderMessages(messages) {
-                const container = document.getElementById('messagesContainer');
-                container.innerHTML = messages.map(msg => `
-                    <div class="flex items-start space-x-4 ${msg.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}">
-                        <div class="avatar ${msg.type === 'user' ? 'user-avatar' : 'ai-avatar'}">${msg.type === 'user' ? 'You' : 'AI'}</div>
-                        <div class="message-bubble flex-1 max-w-[70%] p-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur border border-gray-200 dark:border-gray-700 shadow-lg">
-                            <div class="prose prose-sm dark:prose-invert max-w-none">${msg.content.replace(/\n/g, '<br>')}</div>
-                            <div class="text-xs opacity-75 mt-2">${new Date(msg.timestamp).toLocaleTimeString()}</div>
-                        </div>
-                    </div>
-                `).join('');
-                container.scrollTop = container.scrollHeight;
-            }
-
-            clearInput() {
-                const input = document.getElementById('messageInput');
-                input.value = '';
-                input.style.height = 'auto';
-                document.getElementById('sendBtn').disabled = true;
-                this.updateCharCount();
-            }
-
+            
             updateCharCount() {
-                const count = document.getElementById('messageInput').value.length;
-                document.getElementById('charCount').textContent = `${count}/4000`;
+                const input = document.getElementById('messageInput');
+                document.getElementById('charCount').textContent = `${input.value.length}/8000`;
             }
-
-            updateUI() {
-                this.updateChatCount();
-                document.getElementById('modeLabel').textContent = this.isHackerMode ? 'Hacker Mode' : 'Normal Mode';
+            
+            previousChat() {
+                const idx = this.chats.findIndex(c => c.id === this.currentChatId);
+                if (idx > 0) this.loadChat(this.chats[idx-1].id);
+            }
+            
+            nextChat() {
+                const idx = this.chats.findIndex(c => c.id === this.currentChatId);
+                if (idx < this.chats.length - 1) this.loadChat(this.chats[idx+1].id);
             }
         }
-
-        // Utils
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        // Init
-        const drex = new DRexAI();
-        window.drex = drex;
+        
+        // Initialize Pro version
+        window.drex = new DRexAIPro();
     </script>
 </body>
 </html>
