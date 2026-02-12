@@ -3,372 +3,267 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DRex - Hacker AI Interface</title>
+    <title>DRex | Advanced AI Core</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Custom Hacker Theme */
-        body.hacker-mode {
-            background-color: #000;
-            color: #0f0;
-            font-family: 'Courier New', monospace;
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&display=swap');
+
+        :root {
+            --bg-color: #0d1117;
+            --panel-color: #161b22;
+            --border-color: #30363d;
+            --hacker-green: #00ff41;
+            --text-color: #c9d1d9;
+            --accent-color: #58a6ff;
         }
-        body.normal-mode {
-            background-color: #fff;
-            color: #000;
-            font-family: Arial, sans-serif;
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-color); }
+        
+        /* Hacker Style Overrides */
+        .hacker-text { font-family: 'Fira Code', monospace; color: var(--hacker-green); }
+        .hacker-border { border-color: var(--hacker-green); }
+        .hacker-bg { background-color: #0a0e0a; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+
+        /* Typing Animation */
+        .typing-indicator span {
+            animation: blink 1.4s infinite both;
+            background-color: var(--hacker-green);
+            border-radius: 50%;
+            display: inline-block;
+            height: 8px;
+            width: 8px;
+            margin: 0 2px;
         }
-        /* Matrix-like loading animation */
-        #loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-        .matrix {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-        .matrix-column {
-            position: absolute;
-            top: -100%;
-            white-space: nowrap;
-            animation: fall 10s linear infinite;
-        }
-        @keyframes fall {
-            to { transform: translateY(100vh); }
-        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
+
+        /* File Drag Overlay */
+        #dropOverlay { backdrop-filter: blur(4px); }
     </style>
 </head>
-<body class="hacker-mode min-h-screen flex flex-col">
-    <!-- Loading Animation -->
-    <div id="loading" class="matrix">
-        <div style="position: absolute; color: #0f0; font-size: 2rem;">Initializing DRex Hacker Interface...</div>
-        <!-- Generate matrix columns dynamically in JS -->
-    </div>
+<body class="h-screen flex overflow-hidden">
 
-    <!-- Sidebar -->
-    <aside id="sidebar" class="w-64 bg-gray-900 p-4 flex flex-col fixed h-full overflow-y-auto">
-        <h1 class="text-2xl font-bold mb-4">DRex</h1>
-        <button id="new-chat" class="bg-green-600 text-black px-4 py-2 mb-4 rounded">New Chat</button>
-        <input id="chat-search" type="text" placeholder="Search chats..." class="bg-gray-800 p-2 mb-4 rounded text-white">
-        <ul id="chat-history" class="flex-grow"></ul>
-        <button id="prompt-library-btn" class="bg-gray-700 px-4 py-2 mb-2 rounded">Prompt Library</button>
-        <button id="settings-btn" class="bg-gray-700 px-4 py-2 mb-2 rounded">Settings</button>
-        <button id="mode-toggle" class="bg-red-600 px-4 py-2 rounded">Switch to Normal Mode</button>
+    <aside class="w-72 bg-panel-color border-r border-border-color flex flex-col p-4 z-20">
+        <div class="flex items-center gap-2 mb-8">
+            <i class="fas fa-terminal text-green-500"></i>
+            <h1 class="text-xl font-bold tracking-wider text-white">DRex<span class="text-green-500">_OS</span></h1>
+        </div>
+        
+        <button onclick="newChat()" class="w-full bg-green-950 text-green-300 border border-green-700 p-3 rounded-lg text-sm font-semibold hover:bg-green-900 transition flex items-center justify-center gap-2 mb-4">
+            <i class="fas fa-plus"></i> NEW_SESSION
+        </button>
+
+        <div id="historyList" class="flex-1 overflow-y-auto space-y-2 text-sm text-gray-400">
+            </div>
+
+        <div class="border-t border-border-color pt-4 mt-4 space-y-2">
+            <button onclick="toggleMode()" id="modeToggle" class="w-full text-left p-2 hover:bg-gray-800 rounded flex items-center gap-2 text-sm">
+                <i class="fas fa-shield-alt text-green-500"></i> <span class="hacker-text">HACKER_MODE</span>
+            </button>
+            <button onclick="openSettings()" class="w-full text-left p-2 hover:bg-gray-800 rounded flex items-center gap-2 text-sm">
+                <i class="fas fa-cog"></i> SETTINGS
+            </button>
+        </div>
     </aside>
 
-    <!-- Main Chat Area -->
-    <main class="flex-grow ml-64 p-4 flex flex-col">
-        <div id="chat-container" class="flex-grow overflow-y-auto mb-4"></div>
-        <div id="typing-indicator" class="hidden text-green-500 mb-2">DRex is typing...</div>
-        <div class="flex items-center">
-            <input id="user-input" type="text" placeholder="Type your message..." class="flex-grow p-4 bg-gray-800 rounded-l text-white" 
-                   ondrop="handleDrop(event)" ondragover="event.preventDefault()">
-            <button id="voice-btn" class="bg-gray-700 p-4">🎤</button>
-            <button id="upload-btn" class="bg-gray-700 p-4">📎</button>
-            <input id="file-input" type="file" class="hidden">
-            <button id="send-btn" class="bg-green-600 p-4 rounded-r">Send</button>
+    <main class="flex-1 flex flex-col bg-bg-color relative">
+        <header class="h-16 border-b border-border-color flex items-center justify-between px-6 bg-panel-color">
+            <div class="flex items-center gap-3">
+                <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <span class="text-sm font-medium">NEURAL_LINK: <span class="text-green-500">ACTIVE</span></span>
+            </div>
+            <div class="flex items-center gap-4 text-sm">
+                <span class="text-gray-400">CREDITS: <span id="tokenCount" class="text-white font-mono">0</span></span>
+                <button class="relative">
+                    <i class="fas fa-bell"></i>
+                    <span class="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+                </button>
+            </div>
+        </header>
+
+        <div id="chatBox" class="flex-1 overflow-y-auto p-6 space-y-6">
+            <div class="flex flex-col items-center justify-center h-full text-center text-gray-500">
+                <i class="fas fa-brain text-5xl mb-4"></i>
+                <h2 class="text-2xl font-bold text-gray-300">SYSTEM INITIALIZED</h2>
+                <p class="max-w-md mt-2">Input command, upload data payload, or request encrypted analysis.</p>
+            </div>
         </div>
-        <div id="token-counter" class="text-sm mt-2">Tokens used: 0 | Credits: Loading...</div>
+
+        <div id="typingIndicator" class="hidden px-6 py-2 text-sm text-green-500 flex items-center gap-2">
+            <div class="typing-indicator"><span></span><span></span><span></span></div>
+            DRex is processing...
+        </div>
+
+        <footer class="p-4 bg-panel-color border-t border-border-color">
+            <div class="relative max-w-4xl mx-auto flex items-center gap-2 bg-bg-color border border-border-color rounded-xl p-1.5 focus-within:border-green-500">
+                <button onclick="togglePromptLibrary()" class="p-3 text-gray-400 hover:text-white"><i class="fas fa-book"></i></button>
+                <label class="p-3 text-gray-400 hover:text-white cursor-pointer">
+                    <i class="fas fa-paperclip"></i>
+                    <input type="file" class="hidden" onchange="handleFile(this.files[0])">
+                </label>
+                
+                <textarea id="userInput" rows="1" placeholder="Enter command or query..." class="flex-1 bg-transparent outline-none resize-none text-sm p-2 text-white" oninput="autoGrow(this)"></textarea>
+                
+                <button onclick="startVoice()" id="voiceBtn" class="p-3 text-gray-400 hover:text-white"><i class="fas fa-microphone"></i></button>
+                <button onclick="sendMessage()" class="bg-green-600 text-white p-3 rounded-lg hover:bg-green-500 transition">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </footer>
+
+        <div id="dropOverlay" class="absolute inset-0 bg-black/70 hidden items-center justify-center z-30">
+            <div class="border-4 border-dashed border-green-500 p-10 rounded-2xl text-green-400 text-xl font-bold">
+                DROP DATA PAYLOAD
+            </div>
+        </div>
     </main>
 
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div class="bg-gray-800 p-8 rounded w-96">
-            <h2 class="text-xl mb-4">Settings</h2>
-            <label class="block mb-2">OpenRouter API Key:</label>
-            <input id="api-key" type="text" class="w-full p-2 bg-gray-700 mb-4">
-            <label class="block mb-2">Custom Model Name (e.g., openai/gpt-4o for normal, nousresearch/nous-hermes2 for uncensored):</label>
-            <input id="model-name" type="text" class="w-full p-2 bg-gray-700 mb-4" value="openai/gpt-4o">
-            <button id="save-settings" class="bg-green-600 px-4 py-2">Save</button>
-            <button id="close-settings" class="bg-red-600 px-4 py-2 ml-2">Close</button>
-        </div>
-    </div>
-
-    <!-- Prompt Library Modal -->
-    <div id="prompt-library-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div class="bg-gray-800 p-8 rounded w-96">
-            <h2 class="text-xl mb-4">Prompt Library</h2>
-            <ul id="prompt-list">
-                <!-- Dynamically added in JS -->
-            </ul>
-            <button id="close-library" class="bg-red-600 px-4 py-2 mt-4">Close</button>
+    <div id="settingsModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+        <div class="bg-panel-color border border-border-color rounded-lg w-full max-w-lg p-6">
+            <h2 class="text-xl font-bold mb-4 text-white">System Configuration</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs text-gray-400">OpenRouter API Key</label>
+                    <input type="password" id="apiKey" class="w-full bg-bg-color border border-border-color rounded p-2 text-sm mt-1">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400">Neural Model</label>
+                    <input type="text" id="modelName" value="google/gemini-2.0-flash-001" class="w-full bg-bg-color border border-border-color rounded p-2 text-sm mt-1">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-6">
+                <button onclick="closeSettings()" class="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
+                <button onclick="saveSettings()" class="px-4 py-2 text-sm bg-green-600 rounded hover:bg-green-500 text-white">Save</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // Prevent blank page by placing script at end
+        // DOM Elements
+        const chatBox = document.getElementById('chatBox');
+        const userInput = document.getElementById('userInput');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const tokenCountEl = document.getElementById('tokenCount');
+        const dropOverlay = document.getElementById('dropOverlay');
 
-        // Constants
-        const API_BASE = 'https://openrouter.ai/api/v1';
-        let apiKey = localStorage.getItem('apiKey') || '';
-        let model = localStorage.getItem('model') || 'openai/gpt-4o';
-        let chats = JSON.parse(localStorage.getItem('chats')) || [];
-        let currentChatId = null;
         let isHackerMode = true;
-        let credits = 0;
-        let totalTokens = 0;
-        let unreadChats = new Set();
+        let tokenUsage = 0;
 
-        // Default Prompt Library
-        const promptLibrary = [
-            "Explain quantum computing like I'm 5.",
-            "Write a hacker script to simulate matrix rain.",
-            "Generate a secure password.",
-            "Tell me a dark web story.",
-            "How to build an AI like DRex."
-        ];
-
-        // Matrix Animation on Load
-        function initMatrix() {
-            const matrix = document.querySelector('.matrix');
-            for (let i = 0; i < 50; i++) {
-                const column = document.createElement('div');
-                column.classList.add('matrix-column');
-                column.style.left = `${Math.random() * 100}%`;
-                column.style.animationDuration = `${Math.random() * 5 + 5}s`;
-                column.style.animationDelay = `${Math.random() * 5}s`;
-                column.style.opacity = Math.random();
-                for (let j = 0; j < 20; j++) {
-                    column.innerHTML += String.fromCharCode(0x30A0 + Math.random() * 96) + ' ';
-                }
-                matrix.appendChild(column);
-            }
-            setTimeout(() => {
-                document.getElementById('loading').style.display = 'none';
-            }, 3000); // 3s animation
-        }
-
-        // Load Chats
-        function loadChats() {
-            const history = document.getElementById('chat-history');
-            history.innerHTML = '';
-            chats.forEach((chat, index) => {
-                const li = document.createElement('li');
-                li.classList.add('p-2', 'hover:bg-gray-700', 'cursor-pointer', 'relative');
-                li.textContent = chat.title || `Chat ${index + 1}`;
-                li.dataset.id = index;
-                if (unreadChats.has(index)) {
-                    const badge = document.createElement('span');
-                    badge.classList.add('absolute', 'right-2', 'bg-red-500', 'text-xs', 'px-2', 'rounded-full');
-                    badge.textContent = 'New';
-                    li.appendChild(badge);
-                }
-                li.addEventListener('click', () => loadChat(index));
-                history.appendChild(li);
-            });
-        }
-
-        // Load Specific Chat
-        function loadChat(id) {
-            currentChatId = id;
-            const container = document.getElementById('chat-container');
-            container.innerHTML = '';
-            chats[id].messages.forEach(msg => addMessage(msg.content, msg.role === 'assistant'));
-            unreadChats.delete(id);
-            loadChats();
-            container.scrollTop = container.scrollHeight;
-        }
-
-        // Add Message to Chat
-        function addMessage(content, isAI = false) {
-            const container = document.getElementById('chat-container');
-            const div = document.createElement('div');
-            div.classList.add('mb-4', isAI ? 'text-left' : 'text-right');
-            const bubble = document.createElement('div');
-            bubble.classList.add('inline-block', 'p-4', 'rounded', isAI ? 'bg-gray-700' : 'bg-green-600');
-            bubble.textContent = content;
-            div.appendChild(bubble);
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
+        // Auto-expand textarea
+        function autoGrow(element) {
+            element.style.height = "auto";
+            element.style.height = (element.scrollHeight) + "px";
         }
 
         // Send Message
-        async function sendMessage() {
-            const input = document.getElementById('user-input');
-            const message = input.value.trim();
-            if (!message || !apiKey) return alert('Set API Key in Settings');
-            addMessage(message, false);
-            if (currentChatId === null) createNewChat();
-            chats[currentChatId].messages.push({ role: 'user', content: message });
-            saveChats();
-            input.value = '';
+        function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
 
-            document.getElementById('typing-indicator').classList.remove('hidden');
+            // User Message
+            addMessage('user', text);
+            userInput.value = '';
+            userInput.style.height = 'auto';
 
-            try {
-                const response = await fetch(`${API_BASE}/chat/completions`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${apiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: model,
-                        messages: chats[currentChatId].messages
-                    })
-                });
-                const data = await response.json();
-                const aiMessage = data.choices[0].message.content;
-                addMessage(aiMessage, true);
-                chats[currentChatId].messages.push({ role: 'assistant', content: aiMessage });
-                saveChats();
-
-                // Update Tokens
-                totalTokens += data.usage.total_tokens;
-                updateTokenCounter();
-            } catch (error) {
-                addMessage('Error: ' + error.message, true);
-            } finally {
-                document.getElementById('typing-indicator').classList.add('hidden');
-            }
+            // Simulate AI Response
+            showTyping(true);
+            setTimeout(() => {
+                showTyping(false);
+                addMessage('assistant', `DRex Processing: "${text}"... Encrypted response simulated.`);
+                updateTokens(text.length);
+            }, 1500);
         }
 
-        // Create New Chat
-        function createNewChat() {
-            const newChat = { title: 'New Chat', messages: [] };
-            chats.push(newChat);
-            currentChatId = chats.length - 1;
-            unreadChats.add(currentChatId); // Mark as unread initially? No, since creating it.
-            loadChats();
-            loadChat(currentChatId);
+        function addMessage(sender, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+            
+            const content = sender === 'user' 
+                ? `<div class="bg-green-950/50 border border-green-800 text-green-100 p-3 rounded-lg max-w-md text-sm">${text}</div>`
+                : `<div class="bg-panel-color border border-border-color text-gray-200 p-3 rounded-lg max-w-md text-sm">${text}</div>`;
+            
+            msgDiv.innerHTML = content;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // Save Chats to LocalStorage
-        function saveChats() {
-            localStorage.setItem('chats', JSON.stringify(chats));
+        // Utility Features
+        function showTyping(show) {
+            typingIndicator.classList.toggle('hidden', !show);
         }
 
-        // Fetch Credits
-        async function fetchCredits() {
-            if (!apiKey) return;
-            try {
-                const response = await fetch(`${API_BASE}/auth/key`, {
-                    headers: { 'Authorization': `Bearer ${apiKey}` }
-                });
-                const data = await response.json();
-                credits = data.balance || 0; // Assuming balance is in credits
-                updateTokenCounter();
-            } catch {}
-        }
-
-        // Update Token Counter
-        function updateTokenCounter() {
-            document.getElementById('token-counter').textContent = `Tokens used: ${totalTokens} | Credits: ${credits}`;
+        function updateTokens(len) {
+            tokenUsage += Math.floor(len / 3);
+            tokenCountEl.innerText = tokenUsage;
         }
 
         // Voice Input
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.onresult = (event) => {
-            document.getElementById('user-input').value = event.results[0][0].transcript;
-        };
-        recognition.onerror = () => alert('Voice recognition error');
-
-        // File Upload
-        document.getElementById('upload-btn').addEventListener('click', () => document.getElementById('file-input').click());
-        document.getElementById('file-input').addEventListener('change', handleFile);
-        function handleDrop(e) {
-            e.preventDefault();
-            handleFile({ target: { files: e.dataTransfer.files } });
+        function startVoice() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return alert("Speech API not supported in this browser.");
+            
+            const recognition = new SpeechRecognition();
+            recognition.onresult = (e) => {
+                userInput.value = e.results[0][0].transcript;
+                autoGrow(userInput);
+            };
+            recognition.start();
         }
-        async function handleFile(e) {
-            const file = e.target.files[0];
+
+        // File Handling
+        function handleFile(file) {
             if (!file) return;
-            if (file.type.startsWith('image/')) {
-                // Base64 for vision models
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    const base64 = ev.target.result;
-                    // Append to message as data URI for OpenRouter vision
-                    const currentInput = document.getElementById('user-input').value;
-                    document.getElementById('user-input').value = currentInput + ' [Image: ' + base64 + ']';
-                };
-                reader.readAsDataURL(file);
-            } else {
-                // Text file
-                const text = await file.text();
-                const currentInput = document.getElementById('user-input').value;
-                document.getElementById('user-input').value = currentInput + ' [File: ' + text + ']';
-            }
+            addMessage('user', `<i class="fas fa-file-alt"></i> Data Loaded: ${file.name} (${(file.size/1024).toFixed(1)} KB)`);
         }
 
-        // Prompt Library
-        function loadPromptLibrary() {
-            const list = document.getElementById('prompt-list');
-            list.innerHTML = '';
-            promptLibrary.forEach(prompt => {
-                const li = document.createElement('li');
-                li.classList.add('p-2', 'hover:bg-gray-700', 'cursor-pointer');
-                li.textContent = prompt;
-                li.addEventListener('click', () => {
-                    document.getElementById('user-input').value = prompt;
-                    document.getElementById('prompt-library-modal').classList.add('hidden');
-                });
-                list.appendChild(li);
-            });
-        }
-
-        // Chat Search
-        document.getElementById('chat-search').addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            const history = document.getElementById('chat-history');
-            Array.from(history.children).forEach(li => {
-                li.style.display = li.textContent.toLowerCase().includes(query) ? 'block' : 'none';
-            });
+        // Drag and Drop
+        document.body.addEventListener('dragover', (e) => { e.preventDefault(); dropOverlay.style.display = 'flex'; });
+        dropOverlay.addEventListener('dragleave', () => dropOverlay.style.display = 'none');
+        dropOverlay.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropOverlay.style.display = 'none';
+            handleFile(e.dataTransfer.files[0]);
         });
 
-        // Mode Toggle
+        // Settings Management
+        function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); }
+        function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
+        
+        function saveSettings() {
+            localStorage.setItem('drex_api_key', document.getElementById('apiKey').value);
+            localStorage.setItem('drex_model', document.getElementById('modelName').value);
+            closeSettings();
+        }
+        
+        // Load Settings on Start
+        document.getElementById('apiKey').value = localStorage.getItem('drex_api_key') || '';
+        document.getElementById('modelName').value = localStorage.getItem('drex_model') || 'google/gemini-2.0-flash-001';
+
+        // Toggle Mode
         function toggleMode() {
             isHackerMode = !isHackerMode;
-            document.body.classList.toggle('hacker-mode', isHackerMode);
-            document.body.classList.toggle('normal-mode', !isHackerMode);
-            document.getElementById('mode-toggle').textContent = isHackerMode ? 'Switch to Normal Mode' : 'Switch to Hacker Mode';
-            // Switch model for "uncensored"
-            model = isHackerMode ? 'nousresearch/nous-hermes2' : 'openai/gpt-4o';
-            localStorage.setItem('model', model);
+            const toggleBtn = document.getElementById('modeToggle');
+            if (isHackerMode) {
+                document.documentElement.style.setProperty('--bg-color', '#0d1117');
+                toggleBtn.innerHTML = '<i class="fas fa-shield-alt text-green-500"></i> <span class="hacker-text">HACKER_MODE</span>';
+            } else {
+                document.documentElement.style.setProperty('--bg-color', '#1e293b');
+                toggleBtn.innerHTML = '<i class="fas fa-user-shield text-blue-500"></i> <span class="text-white">NORMAL_MODE</span>';
+            }
         }
-
-        // Event Listeners
-        document.getElementById('new-chat').addEventListener('click', createNewChat);
-        document.getElementById('settings-btn').addEventListener('click', () => document.getElementById('settings-modal').classList.remove('hidden'));
-        document.getElementById('close-settings').addEventListener('click', () => document.getElementById('settings-modal').classList.add('hidden'));
-        document.getElementById('save-settings').addEventListener('click', () => {
-            apiKey = document.getElementById('api-key').value;
-            model = document.getElementById('model-name').value;
-            localStorage.setItem('apiKey', apiKey);
-            localStorage.setItem('model', model);
-            fetchCredits();
-            document.getElementById('settings-modal').classList.add('hidden');
-        });
-        document.getElementById('prompt-library-btn').addEventListener('click', () => {
-            loadPromptLibrary();
-            document.getElementById('prompt-library-modal').classList.remove('hidden');
-        });
-        document.getElementById('close-library').addEventListener('click', () => document.getElementById('prompt-library-modal').classList.add('hidden'));
-        document.getElementById('send-btn').addEventListener('click', sendMessage);
-        document.getElementById('user-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
-        document.getElementById('voice-btn').addEventListener('click', () => recognition.start());
-        document.getElementById('mode-toggle').addEventListener('click', toggleMode);
-
-        // Init
-        initMatrix();
-        loadChats();
-        if (chats.length > 0) loadChat(0);
-        document.getElementById('api-key').value = apiKey;
-        document.getElementById('model-name').value = model;
-        fetchCredits();
-        updateTokenCounter();
+        
+        function newChat() {
+            chatBox.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-center text-gray-500"><i class="fas fa-brain text-5xl mb-4"></i><h2 class="text-2xl font-bold text-gray-300">SYSTEM INITIALIZED</h2></div>';
+        }
     </script>
 </body>
 </html>
