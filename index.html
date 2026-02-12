@@ -1,340 +1,374 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>DRex - Universal AI Chat Interface</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            neon: '#00ff9c'
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DRex - Hacker AI Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Hacker Theme */
+        body.hacker-mode {
+            background-color: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
         }
-      }
-    }
-  </script>
+        body.normal-mode {
+            background-color: #fff;
+            color: #000;
+            font-family: Arial, sans-serif;
+        }
+        /* Matrix-like loading animation */
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .matrix {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .matrix-column {
+            position: absolute;
+            top: -100%;
+            white-space: nowrap;
+            animation: fall 10s linear infinite;
+        }
+        @keyframes fall {
+            to { transform: translateY(100vh); }
+        }
+    </style>
 </head>
-<body class="bg-gray-950 text-gray-100 h-screen overflow-hidden">
-
-<div class="flex h-full">
-
-  <!-- Sidebar -->
-  <aside id="sidebar" class="w-72 bg-gray-900 border-r border-gray-800 flex flex-col">
-    <div class="p-4 flex items-center justify-between border-b border-gray-800">
-      <h1 class="text-xl font-bold text-neon">DRex</h1>
-      <span id="unreadBadge" class="hidden text-xs bg-red-600 px-2 py-0.5 rounded-full">New</span>
+<body class="hacker-mode min-h-screen flex flex-col">
+    <!-- Loading Animation -->
+    <div id="loading" class="matrix">
+        <div style="position: absolute; color: #0f0; font-size: 2rem;">Initializing DRex Hacker Interface...</div>
+        <!-- Generate matrix columns dynamically in JS -->
     </div>
 
-    <div class="p-3">
-      <input id="searchChats" type="text" placeholder="Search chats..." class="w-full bg-gray-800 rounded px-3 py-2 text-sm outline-none">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 bg-gray-900 p-4 flex flex-col fixed h-full overflow-y-auto">
+        <h1 class="text-2xl font-bold mb-4">DRex</h1>
+        <button id="new-chat" class="bg-green-600 text-black px-4 py-2 mb-4 rounded">New Chat</button>
+        <input id="chat-search" type="text" placeholder="Search chats..." class="bg-gray-800 p-2 mb-4 rounded text-white">
+        <ul id="chat-history" class="flex-grow"></ul>
+        <button id="prompt-library-btn" class="bg-gray-700 px-4 py-2 mb-2 rounded">Prompt Library</button>
+        <button id="settings-btn" class="bg-gray-700 px-4 py-2 mb-2 rounded">Settings</button>
+        <button id="mode-toggle" class="bg-red-600 px-4 py-2 rounded">Switch to Normal Mode</button>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="flex-grow ml-64 p-4 flex flex-col">
+        <div id="chat-container" class="flex-grow overflow-y-auto mb-4"></div>
+        <div id="typing-indicator" class="hidden text-green-500 mb-2">DRex is typing...</div>
+        <div class="flex items-center">
+            <input id="user-input" type="text" placeholder="Type your message..." class="flex-grow p-4 bg-gray-800 rounded-l text-white" 
+                   ondrop="handleDrop(event)" ondragover="event.preventDefault()">
+            <button id="voice-btn" class="bg-gray-700 p-4">🎤</button>
+            <button id="upload-btn" class="bg-gray-700 p-4">📎</button>
+            <input id="file-input" type="file" class="hidden">
+            <button id="send-btn" class="bg-green-600 p-4 rounded-r">Send</button>
+        </div>
+        <div id="token-counter" class="text-sm mt-2">Tokens used: 0 | Credits: Loading...</div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="bg-gray-800 p-8 rounded w-96">
+            <h2 class="text-xl mb-4">Settings</h2>
+            <label class="block mb-2">OpenRouter API Key:</label>
+            <input id="api-key" type="text" class="w-full p-2 bg-gray-700 mb-4">
+            <label class="block mb-2">Custom Model Name (e.g., openai/gpt-4o for normal, nousresearch/nous-hermes2 for uncensored):</label>
+            <input id="model-name" type="text" class="w-full p-2 bg-gray-700 mb-4" value="openai/gpt-4o">
+            <button id="save-settings" class="bg-green-600 px-4 py-2">Save</button>
+            <button id="close-settings" class="bg-red-600 px-4 py-2 ml-2">Close</button>
+        </div>
     </div>
 
-    <div id="chatList" class="flex-1 overflow-y-auto px-2 space-y-2"></div>
-
-    <div class="p-3 border-t border-gray-800 flex gap-2">
-      <button id="newChatBtn" class="flex-1 bg-neon text-black rounded px-3 py-2 text-sm font-semibold">+ New</button>
-      <button id="settingsBtn" class="bg-gray-800 rounded px-3 py-2 text-sm">⚙</button>
-    </div>
-  </aside>
-
-  <!-- Main -->
-  <main class="flex-1 flex flex-col">
-
-    <!-- Top Bar -->
-    <div class="p-3 border-b border-gray-800 flex items-center justify-between">
-      <div class="flex gap-2 items-center">
-        <span class="text-sm text-gray-400">Model:</span>
-        <span id="modelLabel" class="text-sm text-neon">not set</span>
-      </div>
-      <div class="flex gap-2">
-        <button id="toggleModeBtn" class="bg-gray-800 px-3 py-1 rounded text-sm">🧑‍💻 Hacker Mode</button>
-        <button id="promptBtn" class="bg-gray-800 px-3 py-1 rounded text-sm">📚 Prompts</button>
-      </div>
+    <!-- Prompt Library Modal -->
+    <div id="prompt-library-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="bg-gray-800 p-8 rounded w-96">
+            <h2 class="text-xl mb-4">Prompt Library</h2>
+            <ul id="prompt-list">
+                <!-- Dynamically added in JS -->
+            </ul>
+            <button id="close-library" class="bg-red-600 px-4 py-2 mt-4">Close</button>
+        </div>
     </div>
 
-    <!-- Chat Area -->
-    <div id="chatArea" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+    <script>
+        // Prevent blank page by placing script at end
 
-    <!-- Typing Indicator -->
-    <div id="typingIndicator" class="hidden px-4 text-sm text-gray-400">DRex is typing...</div>
+        // Constants
+        const API_BASE = 'https://openrouter.ai/api/v1';
+        let apiKey = localStorage.getItem('apiKey') || '';
+        let model = localStorage.getItem('model') || 'openai/gpt-4o';
+        let chats = JSON.parse(localStorage.getItem('chats')) || [];
+        let currentChatId = null;
+        let isHackerMode = true;
+        let credits = 0;
+        let totalTokens = 0;
+        let unreadChats = new Set();
 
-    <!-- Bottom Bar -->
-    <div class="p-3 border-t border-gray-800">
-      <div class="flex gap-2 items-center">
-        <input type="file" id="fileInput" class="hidden" />
-        <button id="fileBtn" class="bg-gray-800 px-3 py-2 rounded">📎</button>
-        <button id="voiceBtn" class="bg-gray-800 px-3 py-2 rounded">🎤</button>
-        <input id="userInput" type="text" placeholder="Type your message..." class="flex-1 bg-gray-800 rounded px-3 py-2 outline-none" />
-        <button id="sendBtn" class="bg-neon text-black px-4 py-2 rounded font-semibold">Send</button>
-      </div>
-      <div class="mt-2 flex justify-between text-xs text-gray-400">
-        <span id="tokenCounter">Tokens: 0</span>
-        <span id="creditCounter">Credits: 0.00</span>
-      </div>
-    </div>
+        // Default Prompt Library
+        const promptLibrary = [
+            "Explain quantum computing like I'm 5.",
+            "Write a hacker script to simulate matrix rain.",
+            "Generate a secure password.",
+            "Tell me a dark web story.",
+            "How to build an AI like DRex."
+        ];
 
-  </main>
-</div>
+        // Matrix Animation on Load
+        function initMatrix() {
+            const matrix = document.querySelector('.matrix');
+            for (let i = 0; i < 50; i++) {
+                const column = document.createElement('div');
+                column.classList.add('matrix-column');
+                column.style.left = `${Math.random() * 100}%`;
+                column.style.animationDuration = `${Math.random() * 5 + 5}s`;
+                column.style.animationDelay = `${Math.random() * 5}s`;
+                column.style.opacity = Math.random();
+                for (let j = 0; j < 20; j++) {
+                    column.innerHTML += String.fromCharCode(0x30A0 + Math.random() * 96) + ' ';
+                }
+                matrix.appendChild(column);
+            }
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+            }, 3000); // 3s animation
+        }
 
-<!-- Settings Modal -->
-<div id="settingsModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center">
-  <div class="bg-gray-900 p-6 rounded w-96 space-y-4">
-    <h2 class="text-lg font-bold text-neon">Settings</h2>
-    <div>
-      <label class="text-sm text-gray-400">OpenRouter API Key</label>
-      <input id="apiKeyInput" type="password" class="w-full bg-gray-800 rounded px-3 py-2 mt-1" />
-    </div>
-    <div>
-      <label class="text-sm text-gray-400">Model Name</label>
-      <input id="modelInput" type="text" placeholder="e.g. openai/gpt-4o-mini" class="w-full bg-gray-800 rounded px-3 py-2 mt-1" />
-    </div>
-    <div class="flex justify-end gap-2">
-      <button id="closeSettings" class="bg-gray-700 px-3 py-2 rounded">Cancel</button>
-      <button id="saveSettings" class="bg-neon text-black px-3 py-2 rounded font-semibold">Save</button>
-    </div>
-  </div>
-</div>
+        // Load Chats
+        function loadChats() {
+            const history = document.getElementById('chat-history');
+            history.innerHTML = '';
+            chats.forEach((chat, index) => {
+                const li = document.createElement('li');
+                li.classList.add('p-2', 'hover:bg-gray-700', 'cursor-pointer', 'relative');
+                li.textContent = chat.title || `Chat ${index + 1}`;
+                li.dataset.id = index;
+                if (unreadChats.has(index)) {
+                    const badge = document.createElement('span');
+                    badge.classList.add('absolute', 'right-2', 'bg-red-500', 'text-xs', 'px-2', 'rounded-full');
+                    badge.textContent = 'New';
+                    li.appendChild(badge);
+                }
+                li.addEventListener('click', () => loadChat(index));
+                history.appendChild(li);
+            });
+        }
 
-<!-- Prompts Modal -->
-<div id="promptModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center">
-  <div class="bg-gray-900 p-6 rounded w-96 space-y-3">
-    <h2 class="text-lg font-bold text-neon">Prompt Library</h2>
-    <div class="space-y-2">
-      <button class="promptItem w-full text-left bg-gray-800 p-2 rounded">Explain this like I'm 5</button>
-      <button class="promptItem w-full text-left bg-gray-800 p-2 rounded">Fix bugs in this code</button>
-      <button class="promptItem w-full text-left bg-gray-800 p-2 rounded">Write professional email</button>
-      <button class="promptItem w-full text-left bg-gray-800 p-2 rounded">Summarize this text</button>
-    </div>
-    <div class="flex justify-end">
-      <button id="closePrompt" class="bg-gray-700 px-3 py-2 rounded">Close</button>
-    </div>
-  </div>
-</div>
+        // Load Specific Chat
+        function loadChat(id) {
+            currentChatId = id;
+            const container = document.getElementById('chat-container');
+            container.innerHTML = '';
+            chats[id].messages.forEach(msg => addMessage(msg.content, msg.role === 'assistant'));
+            unreadChats.delete(id);
+            loadChats();
+            container.scrollTop = container.scrollHeight;
+        }
 
-<script>
-/* =========================
-   State & Storage
-========================= */
-let chats = JSON.parse(localStorage.getItem("drex_chats") || "[]");
-let currentChatId = null;
-let apiKey = localStorage.getItem("drex_apiKey") || "";
-let modelName = localStorage.getItem("drex_model") || "";
+        // Add Message to Chat
+        function addMessage(content, isAI = false) {
+            const container = document.getElementById('chat-container');
+            const div = document.createElement('div');
+            div.classList.add('mb-4', isAI ? 'text-left' : 'text-right');
+            const bubble = document.createElement('div');
+            bubble.classList.add('inline-block', 'p-4', 'rounded', isAI ? 'bg-gray-700' : 'bg-green-600');
+            bubble.textContent = content;
+            div.appendChild(bubble);
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
 
-const chatList = document.getElementById("chatList");
-const chatArea = document.getElementById("chatArea");
-const userInput = document.getElementById("userInput");
-const sendBtn = document.getElementById("sendBtn");
-const newChatBtn = document.getElementById("newChatBtn");
-const settingsBtn = document.getElementById("settingsBtn");
-const settingsModal = document.getElementById("settingsModal");
-const saveSettings = document.getElementById("saveSettings");
-const closeSettings = document.getElementById("closeSettings");
-const apiKeyInput = document.getElementById("apiKeyInput");
-const modelInput = document.getElementById("modelInput");
-const modelLabel = document.getElementById("modelLabel");
-const typingIndicator = document.getElementById("typingIndicator");
-const tokenCounter = document.getElementById("tokenCounter");
-const creditCounter = document.getElementById("creditCounter");
-const searchChats = document.getElementById("searchChats");
-const unreadBadge = document.getElementById("unreadBadge");
-const toggleModeBtn = document.getElementById("toggleModeBtn");
-const promptBtn = document.getElementById("promptBtn");
-const promptModal = document.getElementById("promptModal");
-const closePrompt = document.getElementById("closePrompt");
-const fileBtn = document.getElementById("fileBtn");
-const fileInput = document.getElementById("fileInput");
-const voiceBtn = document.getElementById("voiceBtn");
+        // Send Message
+        async function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            if (!message || !apiKey) return alert('Set API Key in Settings');
+            addMessage(message, false);
+            if (currentChatId === null) createNewChat();
+            chats[currentChatId].messages.push({ role: 'user', content: message });
+            saveChats();
+            input.value = '';
 
-let hackerMode = true;
+            document.getElementById('typing-indicator').classList.remove('hidden');
 
-/* =========================
-   UI Helpers
-========================= */
-function saveChats() {
-  localStorage.setItem("drex_chats", JSON.stringify(chats));
-}
+            try {
+                const response = await fetch(`${API_BASE}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: chats[currentChatId].messages
+                    })
+                });
+                const data = await response.json();
+                const aiMessage = data.choices[0].message.content;
+                addMessage(aiMessage, true);
+                chats[currentChatId].messages.push({ role: 'assistant', content: aiMessage });
+                saveChats();
 
-function renderChatList(filter = "") {
-  chatList.innerHTML = "";
-  chats
-    .filter(c => c.title.toLowerCase().includes(filter.toLowerCase()))
-    .forEach(chat => {
-      const btn = document.createElement("button");
-      btn.className = "w-full text-left bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded text-sm";
-      btn.textContent = chat.title;
-      btn.onclick = () => loadChat(chat.id);
-      chatList.appendChild(btn);
-    });
-}
+                // Update Tokens
+                totalTokens += data.usage.total_tokens;
+                updateTokenCounter();
+            } catch (error) {
+                addMessage('Error: ' + error.message, true);
+            } finally {
+                document.getElementById('typing-indicator').classList.add('hidden');
+            }
+        }
 
-function renderMessages(chat) {
-  chatArea.innerHTML = "";
-  chat.messages.forEach(m => {
-    const div = document.createElement("div");
-    div.className = m.role === "user"
-      ? "bg-blue-600/20 p-3 rounded self-end max-w-xl ml-auto"
-      : "bg-gray-800 p-3 rounded max-w-xl";
-    div.textContent = m.content;
-    chatArea.appendChild(div);
-  });
-  chatArea.scrollTop = chatArea.scrollHeight;
-}
+        // Create New Chat
+        function createNewChat() {
+            const newChat = { title: 'New Chat', messages: [] };
+            chats.push(newChat);
+            currentChatId = chats.length - 1;
+            unreadChats.add(currentChatId); // Mark as unread initially? No, since creating it.
+            loadChats();
+            loadChat(currentChatId);
+        }
 
-function newChat() {
-  const id = Date.now().toString();
-  const chat = { id, title: "New Chat", messages: [] };
-  chats.unshift(chat);
-  currentChatId = id;
-  saveChats();
-  renderChatList();
-  renderMessages(chat);
-}
+        // Save Chats to LocalStorage
+        function saveChats() {
+            localStorage.setItem('chats', JSON.stringify(chats));
+        }
 
-function loadChat(id) {
-  const chat = chats.find(c => c.id === id);
-  if (!chat) return;
-  currentChatId = id;
-  renderMessages(chat);
-}
+        // Fetch Credits
+        async function fetchCredits() {
+            if (!apiKey) return;
+            try {
+                const response = await fetch(`${API_BASE}/auth/key`, {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                });
+                const data = await response.json();
+                credits = data.balance || 0; // Assuming balance is in credits
+                updateTokenCounter();
+            } catch {}
+        }
 
-/* =========================
-   API Call
-========================= */
-async function sendMessage() {
-  const text = userInput.value.trim();
-  if (!text) return;
+        // Update Token Counter
+        function updateTokenCounter() {
+            document.getElementById('token-counter').textContent = `Tokens used: ${totalTokens} | Credits: ${credits}`;
+        }
 
-  if (!currentChatId) newChat();
+        // Voice Input
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.onresult = (event) => {
+            document.getElementById('user-input').value = event.results[0][0].transcript;
+        };
+        recognition.onerror = () => alert('Voice recognition error');
 
-  const chat = chats.find(c => c.id === currentChatId);
-  chat.messages.push({ role: "user", content: text });
-  if (chat.title === "New Chat") chat.title = text.slice(0, 30);
-  userInput.value = "";
-  renderChatList();
-  renderMessages(chat);
-  saveChats();
+        // File Upload
+        document.getElementById('upload-btn').addEventListener('click', () => document.getElementById('file-input').click());
+        document.getElementById('file-input').addEventListener('change', handleFile);
+        function handleDrop(e) {
+            e.preventDefault();
+            handleFile({ target: { files: e.dataTransfer.files } });
+        }
+        async function handleFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.type.startsWith('image/')) {
+                // Base64 for vision models
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const base64 = ev.target.result;
+                    // Append to message as data URI for OpenRouter vision
+                    const currentInput = document.getElementById('user-input').value;
+                    document.getElementById('user-input').value = currentInput + ' [Image: ' + base64 + ']';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // Text file
+                const text = await file.text();
+                const currentInput = document.getElementById('user-input').value;
+                document.getElementById('user-input').value = currentInput + ' [File: ' + text + ']';
+            }
+        }
 
-  typingIndicator.classList.remove("hidden");
+        // Prompt Library
+        function loadPromptLibrary() {
+            const list = document.getElementById('prompt-list');
+            list.innerHTML = '';
+            promptLibrary.forEach(prompt => {
+                const li = document.createElement('li');
+                li.classList.add('p-2', 'hover:bg-gray-700', 'cursor-pointer');
+                li.textContent = prompt;
+                li.addEventListener('click', () => {
+                    document.getElementById('user-input').value = prompt;
+                    document.getElementById('prompt-library-modal').classList.add('hidden');
+                });
+                list.appendChild(li);
+            });
+        }
 
-  if (!apiKey || !modelName) {
-    chat.messages.push({ role: "assistant", content: "⚠️ Please set API Key and Model in Settings." });
-    typingIndicator.classList.add("hidden");
-    renderMessages(chat);
-    return;
-  }
+        // Chat Search
+        document.getElementById('chat-search').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const history = document.getElementById('chat-history');
+            Array.from(history.children).forEach(li => {
+                li.style.display = li.textContent.toLowerCase().includes(query) ? 'block' : 'none';
+            });
+        });
 
-  try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + apiKey
-      },
-      body: JSON.stringify({
-        model: modelName,
-        messages: chat.messages
-      })
-    });
+        // Mode Toggle
+        function toggleMode() {
+            isHackerMode = !isHackerMode;
+            document.body.classList.toggle('hacker-mode', isHackerMode);
+            document.body.classList.toggle('normal-mode', !isHackerMode);
+            document.getElementById('mode-toggle').textContent = isHackerMode ? 'Switch to Normal Mode' : 'Switch to Hacker Mode';
+            // Switch model for "uncensored"
+            model = isHackerMode ? 'nousresearch/nous-hermes2' : 'openai/gpt-4o';
+            localStorage.setItem('model', model);
+        }
 
-    const data = await res.json();
-    const reply = data.choices?.[0]?.message?.content || "No response.";
-    chat.messages.push({ role: "assistant", content: reply });
+        // Event Listeners
+        document.getElementById('new-chat').addEventListener('click', createNewChat);
+        document.getElementById('settings-btn').addEventListener('click', () => document.getElementById('settings-modal').classList.remove('hidden'));
+        document.getElementById('close-settings').addEventListener('click', () => document.getElementById('settings-modal').classList.add('hidden'));
+        document.getElementById('save-settings').addEventListener('click', () => {
+            apiKey = document.getElementById('api-key').value;
+            model = document.getElementById('model-name').value;
+            localStorage.setItem('apiKey', apiKey);
+            localStorage.setItem('model', model);
+            fetchCredits();
+            document.getElementById('settings-modal').classList.add('hidden');
+        });
+        document.getElementById('prompt-library-btn').addEventListener('click', () => {
+            loadPromptLibrary();
+            document.getElementById('prompt-library-modal').classList.remove('hidden');
+        });
+        document.getElementById('close-library').addEventListener('click', () => document.getElementById('prompt-library-modal').classList.add('hidden'));
+        document.getElementById('send-btn').addEventListener('click', sendMessage);
+        document.getElementById('user-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+        document.getElementById('voice-btn').addEventListener('click', () => recognition.start());
+        document.getElementById('mode-toggle').addEventListener('click', toggleMode);
 
-    // Rough token estimate
-    const tokens = Math.round((JSON.stringify(chat.messages).length) / 4);
-    tokenCounter.textContent = "Tokens: " + tokens;
-    creditCounter.textContent = "Credits: " + (tokens * 0.000002).toFixed(4);
-
-    unreadBadge.classList.remove("hidden");
-    setTimeout(() => unreadBadge.classList.add("hidden"), 2000);
-
-    saveChats();
-    renderMessages(chat);
-  } catch (e) {
-    chat.messages.push({ role: "assistant", content: "❌ Error: " + e.message });
-    renderMessages(chat);
-  } finally {
-    typingIndicator.classList.add("hidden");
-  }
-}
-
-/* =========================
-   Events
-========================= */
-sendBtn.onclick = sendMessage;
-userInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") sendMessage();
-});
-
-newChatBtn.onclick = newChat;
-
-settingsBtn.onclick = () => {
-  apiKeyInput.value = apiKey;
-  modelInput.value = modelName;
-  settingsModal.classList.remove("hidden");
-};
-
-closeSettings.onclick = () => settingsModal.classList.add("hidden");
-
-saveSettings.onclick = () => {
-  apiKey = apiKeyInput.value.trim();
-  modelName = modelInput.value.trim();
-  localStorage.setItem("drex_apiKey", apiKey);
-  localStorage.setItem("drex_model", modelName);
-  modelLabel.textContent = modelName || "not set";
-  settingsModal.classList.add("hidden");
-};
-
-searchChats.oninput = () => renderChatList(searchChats.value);
-
-toggleModeBtn.onclick = () => {
-  hackerMode = !hackerMode;
-  document.body.classList.toggle("bg-gray-950");
-  document.body.classList.toggle("bg-gray-100");
-  toggleModeBtn.textContent = hackerMode ? "🧑‍💻 Hacker Mode" : "🙂 Normal Mode";
-};
-
-promptBtn.onclick = () => promptModal.classList.remove("hidden");
-closePrompt.onclick = () => promptModal.classList.add("hidden");
-document.querySelectorAll(".promptItem").forEach(btn => {
-  btn.onclick = () => {
-    userInput.value = btn.textContent;
-    promptModal.classList.add("hidden");
-    userInput.focus();
-  };
-});
-
-fileBtn.onclick = () => fileInput.click();
-fileInput.onchange = () => {
-  if (fileInput.files.length) {
-    userInput.value += " [Attached file: " + fileInput.files[0].name + "]";
-  }
-};
-
-// Voice Input
-if ("webkitSpeechRecognition" in window) {
-  const rec = new webkitSpeechRecognition();
-  rec.lang = "en-US";
-  rec.onresult = e => {
-    userInput.value += " " + e.results[0][0].transcript;
-  };
-  voiceBtn.onclick = () => rec.start();
-} else {
-  voiceBtn.onclick = () => alert("Voice input not supported in this browser.");
-}
-
-/* =========================
-   Init
-========================= */
-renderChatList();
-if (chats.length) {
-  loadChat(chats[0].id);
-}
-modelLabel.textContent = modelName || "not set";
-</script>
-
+        // Init
+        initMatrix();
+        loadChats();
+        if (chats.length > 0) loadChat(0);
+        document.getElementById('api-key').value = apiKey;
+        document.getElementById('model-name').value = model;
+        fetchCredits();
+        updateTokenCounter();
+    </script>
 </body>
 </html>
