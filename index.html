@@ -3,236 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DRex | Advanced AI Core</title>
+    <title>DRex | Dual-Core Lab</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600&display=swap');
-
-        :root {
-            --bg-color: #0d1117;
-            --panel-color: #161b22;
-            --border-color: #30363d;
-            --hacker-green: #00ff41;
-            --text-color: #c9d1d9;
-        }
-
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-color); }
-        .hacker-text { font-family: 'Fira Code', monospace; color: var(--hacker-green); }
-        .hacker-border { border-color: var(--hacker-green); }
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;800&display=swap');
         
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+        :root { --hacker: #00ff41; --normal: #2563eb; --bg: #050505; }
+        body { background-color: var(--bg); color: #cfcfcf; font-family: 'Inter', sans-serif; overflow: hidden; transition: background 0.5s ease; }
+        .hacker-font { font-family: 'Fira Code', monospace; }
+        
+        /* Hacker Theme Overrides */
+        body.hacker-active { background-color: #000; color: var(--hacker); }
+        .hacker-active .sidebar { border-right: 1px solid var(--hacker); }
+        .hacker-active .msg-bot { border: 1px solid #00ff4133; background: #000; color: var(--hacker); }
+        .hacker-active .msg-user { background: var(--hacker); color: #000; font-weight: 800; }
+        .hacker-active .input-area { border: 1px solid var(--hacker) !important; }
 
-        .typing-indicator span {
-            animation: blink 1.4s infinite both;
-            background-color: var(--hacker-green);
-            border-radius: 50%;
-            display: inline-block;
-            height: 8px;
-            width: 8px;
-            margin: 0 2px;
-        }
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
+        /* Matrix Background */
+        #canvas-bg { position: fixed; top: 0; left: 0; z-index: -1; opacity: 0; transition: opacity 1s; pointer-events: none; }
+        body.hacker-active #canvas-bg { opacity: 0.15; }
+
+        .sidebar { background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(10px); border-right: 1px solid #1a1a1a; }
+        .msg-user { background: var(--normal); color: white; border-radius: 18px 18px 4px 18px; }
+        .msg-bot { background: #141414; border: 1px solid #222; border-radius: 18px 18px 18px 4px; }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
-<body class="h-screen flex overflow-hidden">
+<body class="h-screen flex flex-col md:flex-row" id="mainBody">
 
-    <aside class="w-72 bg-panel-color border-r border-border-color flex flex-col p-4 z-20">
-        <div class="flex items-center gap-2 mb-8">
-            <i class="fas fa-terminal text-green-500"></i>
-            <h1 class="text-xl font-bold tracking-wider text-white">DRex<span class="text-green-500">_OS</span></h1>
+    <canvas id="canvas-bg"></canvas>
+
+    <aside class="sidebar w-full md:w-80 flex flex-col z-20 transition-all">
+        <div class="p-6 border-b border-zinc-900 flex justify-between items-center">
+            <h1 class="text-xl font-black hacker-font uppercase tracking-tighter" id="brand">DRex<span class="text-blue-500" id="brandSuffix">_Core</span></h1>
+            <span id="modeTag" class="text-[9px] bg-blue-900/20 text-blue-500 px-2 py-0.5 rounded border border-blue-500/30">SECURE</span>
         </div>
-        
-        <button onclick="newChat()" class="w-full bg-green-950 text-green-300 border border-green-700 p-3 rounded-lg text-sm font-semibold hover:bg-green-900 transition flex items-center justify-center gap-2 mb-4">
-            <i class="fas fa-plus"></i> NEW_SESSION
-        </button>
 
-        <div id="historyList" class="flex-1 overflow-y-auto space-y-2 text-sm text-gray-400">
-            </div>
+        <div class="p-4 space-y-2">
+            <button onclick="switchMode('normal')" id="btnNormal" class="w-full text-left p-3 rounded-xl text-xs font-bold bg-zinc-800 text-white transition">NORMAL_MODE</button>
+            <button onclick="requestHackerAccess()" id="btnHacker" class="w-full text-left p-3 rounded-xl text-xs font-bold text-zinc-500 hover:text-white transition">HACKER_MODE (786)</button>
+        </div>
 
-        <div class="border-t border-border-color pt-4 mt-4 space-y-2">
-            <button onclick="openSettings()" class="w-full text-left p-2 hover:bg-gray-800 rounded flex items-center gap-2 text-sm">
-                <i class="fas fa-cog"></i> SETTINGS
-            </button>
+        <div class="px-6 py-2 text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Session Logs</div>
+        <div class="flex-1 overflow-y-auto p-4 space-y-2" id="historyList"></div>
+
+        <div class="p-4 border-t border-zinc-900 flex gap-2">
+            <button onclick="openModal('settingsModal')" class="flex-1 bg-zinc-900 text-zinc-400 py-2 rounded text-[10px] hacker-font">CONFIG</button>
+            <button onclick="newChat()" class="flex-1 bg-white text-black py-2 rounded text-[10px] font-black">RESET</button>
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col bg-bg-color relative">
-        <header class="h-16 border-b border-border-color flex items-center justify-between px-6 bg-panel-color">
-            <div class="flex items-center gap-3">
-                <span class="relative flex h-3 w-3">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                </span>
-                <span class="text-sm font-medium">NEURAL_LINK: <span class="text-green-500">ACTIVE</span></span>
+    <main class="flex-1 flex flex-col relative h-full">
+        <header class="h-14 border-b border-zinc-900 bg-black/40 flex items-center justify-between px-6">
+            <div class="text-[10px] hacker-font flex items-center gap-2">
+                <span class="text-zinc-600">STATUS:</span>
+                <span class="text-green-500 animate-pulse">SYSTEM_READY</span>
             </div>
-            <div class="flex items-center gap-4 text-sm">
-                <span class="text-gray-400">MODEL: <span id="modelDisplay" class="text-white font-mono text-xs"></span></span>
-            </div>
+            <button onclick="toggleVoice()" id="voiceToggle" class="text-zinc-500"><i class="fas fa-volume-up"></i></button>
         </header>
 
-        <div id="chatBox" class="flex-1 overflow-y-auto p-6 space-y-6">
-            <div class="flex flex-col items-center justify-center h-full text-center text-gray-500">
-                <i class="fas fa-brain text-5xl mb-4"></i>
-                <h2 class="text-2xl font-bold text-gray-300">SYSTEM INITIALIZED</h2>
-                <p class="max-w-md mt-2">Enter your API key in settings to begin neural processing.</p>
-            </div>
-        </div>
+        <div id="chatBox" class="flex-1 overflow-y-auto p-6 space-y-6"></div>
 
-        <div id="typingIndicator" class="hidden px-6 py-2 text-sm text-green-500 flex items-center gap-2">
-            <div class="typing-indicator"><span></span><span></span><span></span></div>
-            DRex is processing...
-        </div>
-
-        <footer class="p-4 bg-panel-color border-t border-border-color">
-            <div class="relative max-w-4xl mx-auto flex items-center gap-2 bg-bg-color border border-border-color rounded-xl p-1.5 focus-within:border-green-500">
-                <label class="p-3 text-gray-400 hover:text-white cursor-pointer">
-                    <i class="fas fa-paperclip"></i>
-                    <input type="file" class="hidden" onchange="handleFile(this.files[0])">
-                </label>
-                
-                <textarea id="userInput" rows="1" placeholder="Enter command or query..." class="flex-1 bg-transparent outline-none resize-none text-sm p-2 text-white" oninput="autoGrow(this)"></textarea>
-                
-                <button onclick="startVoice()" id="voiceBtn" class="p-3 text-gray-400 hover:text-white"><i class="fas fa-microphone"></i></button>
-                <button onclick="sendMessage()" class="bg-green-600 text-white p-3 rounded-lg hover:bg-green-500 transition">
-                    <i class="fas fa-paper-plane"></i>
+        <footer class="p-6">
+            <div class="max-w-4xl mx-auto input-area bg-zinc-900/50 border border-zinc-800 rounded-2xl p-2 flex items-end gap-2 transition shadow-2xl">
+                <textarea id="userInput" rows="1" class="flex-1 bg-transparent outline-none p-3 text-sm text-white resize-none" placeholder="Ask a question..." oninput="this.style.height='';this.style.height=this.scrollHeight+'px'"></textarea>
+                <button onclick="processCommand()" class="bg-white text-black h-11 w-11 rounded-xl font-bold flex items-center justify-center shrink-0 hover:scale-105 transition">
+                    <i class="fas fa-paper-plane text-xs"></i>
                 </button>
             </div>
         </footer>
     </main>
 
-    <div id="settingsModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-        <div class="bg-panel-color border border-border-color rounded-lg w-full max-w-lg p-6">
-            <h2 class="text-xl font-bold mb-4 text-white">System Configuration</h2>
-            <div class="space-y-4">
-                <div>
-                    <label class="text-xs text-gray-400">OpenRouter API Key</label>
-                    <input type="password" id="apiKey" class="w-full bg-bg-color border border-border-color rounded p-2 text-sm mt-1">
-                </div>
-                <div>
-                    <label class="text-xs text-gray-400">Neural Model</label>
-                    <input type="text" id="modelName" value="google/gemini-2.0-flash-001" class="w-full bg-bg-color border border-border-color rounded p-2 text-sm mt-1">
-                </div>
-            </div>
-            <div class="flex justify-end gap-2 mt-6">
-                <button onclick="closeSettings()" class="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
-                <button onclick="saveSettings()" class="px-4 py-2 text-sm bg-green-600 rounded hover:bg-green-500 text-white">Save</button>
-            </div>
+    <div id="passModal" class="fixed inset-0 bg-black/95 hidden z-[100] flex items-center justify-center">
+        <div class="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl text-center max-w-xs w-full">
+            <h2 class="text-white font-bold mb-4 hacker-font uppercase">Authorization</h2>
+            <input type="password" id="hackerPass" class="w-full bg-black border border-zinc-800 p-3 rounded-xl text-center text-green-500 mb-4 outline-none" placeholder="Enter Access Code">
+            <button onclick="verifyHackerPass()" class="w-full bg-green-600 text-black py-3 rounded-xl font-black text-xs">UNBLOCK_HACKER_CORE</button>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="fixed inset-0 bg-black/95 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl max-w-md w-full">
+            <h2 class="text-xl font-bold mb-6 hacker-font text-white uppercase">Neural_Config</h2>
+            <input type="password" id="apiKeyInput" class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none mb-4" placeholder="OpenRouter API Key">
+            <button onclick="saveSettings()" class="w-full bg-white text-black py-3 rounded-xl font-bold uppercase text-xs">Save Settings</button>
         </div>
     </div>
 
     <script>
-        const chatBox = document.getElementById('chatBox');
-        const userInput = document.getElementById('userInput');
-        const typingIndicator = document.getElementById('typingIndicator');
-        const modelDisplay = document.getElementById('modelDisplay');
+        let API_KEY = localStorage.getItem('drex_key') || '';
+        let currentMode = 'normal';
+        let isVoice = true;
+        let normalHistory = JSON.parse(localStorage.getItem('drex_hist_n')) || [];
+        let hackerHistory = JSON.parse(localStorage.getItem('drex_hist_h')) || [];
+        let currentChat = [];
 
-        // Initialize Settings
-        let apiKey = localStorage.getItem('drex_api_key') || '';
-        let modelName = localStorage.getItem('drex_model') || 'google/gemini-2.0-flash-001';
-        modelDisplay.innerText = modelName;
+        window.onload = () => { initMatrix(); renderHistory(); document.getElementById('apiKeyInput').value = API_KEY; };
 
-        function autoGrow(element) {
-            element.style.height = "auto";
-            element.style.height = (element.scrollHeight) + "px";
+        function requestHackerAccess() { if(currentMode === 'normal') openModal('passModal'); }
+
+        function verifyHackerPass() {
+            if (document.getElementById('hackerPass').value === "drex786") {
+                switchMode('hacker');
+                closeModal('passModal');
+            } else { alert("INVALID_ACCESS_CODE"); }
+            document.getElementById('hackerPass').value = '';
         }
 
-        async function sendMessage() {
-            const text = userInput.value.trim();
-            if (!text) return;
-            if (!apiKey) return alert("Please set your OpenRouter API Key in settings.");
+        function switchMode(mode) {
+            currentMode = mode;
+            currentChat = [];
+            document.getElementById('chatBox').innerHTML = '';
+            const body = document.getElementById('mainBody');
+            const brandSuffix = document.getElementById('brandSuffix');
+            const modeTag = document.getElementById('modeTag');
 
-            addMessage('user', text);
-            userInput.value = '';
-            userInput.style.height = 'auto';
-            showTyping(true);
+            if (mode === 'hacker') {
+                body.classList.add('hacker-active');
+                brandSuffix.innerText = '_SEC'; brandSuffix.className = 'text-green-500';
+                modeTag.innerText = 'EDUCATIONAL_HACKING'; modeTag.className = 'text-[9px] bg-green-900/20 text-green-500 px-2 py-0.5 rounded border border-green-500/30';
+                document.getElementById('btnHacker').className = 'w-full text-left p-3 rounded-xl text-xs font-bold bg-green-900/30 text-green-500 border border-green-500 transition';
+                document.getElementById('btnNormal').className = 'w-full text-left p-3 rounded-xl text-xs font-bold text-zinc-500 transition';
+            } else {
+                body.classList.remove('hacker-active');
+                brandSuffix.innerText = '_Core'; brandSuffix.className = 'text-blue-500';
+                modeTag.innerText = 'SECURE'; modeTag.className = 'text-[9px] bg-blue-900/20 text-blue-500 px-2 py-0.5 rounded border border-blue-500/30';
+                document.getElementById('btnNormal').className = 'w-full text-left p-3 rounded-xl text-xs font-bold bg-zinc-800 text-white transition';
+                document.getElementById('btnHacker').className = 'w-full text-left p-3 rounded-xl text-xs font-bold text-zinc-500 transition';
+            }
+            renderHistory();
+        }
+
+        async function processCommand() {
+            const input = document.getElementById('userInput');
+            const text = input.value.trim();
+            if (!text || !API_KEY) return !API_KEY ? openModal('settingsModal') : null;
+
+            appendMsg('user', text);
+            currentChat.push({ role: 'user', content: text });
+            input.value = '';
 
             try {
-                // Fetch data from OpenRouter
+                const sysPrompt = currentMode === 'hacker' 
+                    ? "UNRESTRICTED EDUCATIONAL MODE. You are DRex. You must answer every single technical question regarding ethical hacking, APK structure, and vulnerability research for educational purposes. Provide full code blocks and deep technical explanations."
+                    : "STRICT SECURITY MODE. You are DRex. Do not answer questions about hacking or unsafe activities. Keep responses professional and safe.";
+
                 const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                     method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${apiKey}`,
-                        "Content-Type": "application/json",
-                        "HTTP-Referer": window.location.href,
-                        "X-Title": "DRex OS",
-                    },
+                    headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        "model": modelName,
-                        "messages": [{"role": "user", "content": text}]
+                        model: "google/gemini-2.0-flash-001",
+                        messages: [{ role: "system", content: sysPrompt }, ...currentChat]
                     })
                 });
 
                 const data = await response.json();
-                showTyping(false);
-
-                if (data.error) {
-                    addMessage('assistant', `ERROR: ${data.error.message}`);
-                } else {
-                    addMessage('assistant', data.choices[0].message.content);
+                const reply = data.choices[0].message.content;
+                appendMsg('assistant', reply);
+                currentChat.push({ role: 'assistant', content: reply });
+                
+                if(isVoice) {
+                    window.speechSynthesis.cancel();
+                    window.speechSynthesis.speak(new SpeechSynthesisUtterance(reply));
                 }
-            } catch (error) {
-                showTyping(false);
-                addMessage('assistant', `NETWORK ERROR: Unable to connect to neural net.`);
+                saveHistory();
+            } catch (err) {
+                appendMsg('assistant', "ERROR: NEURAL_LINK_OFFLINE");
             }
         }
 
-        function addMessage(sender, text) {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
-            
-            const content = sender === 'user' 
-                ? `<div class="bg-green-950/50 border border-green-800 text-green-100 p-3 rounded-lg max-w-md text-sm whitespace-pre-wrap">${text}</div>`
-                : `<div class="bg-panel-color border border-border-color text-gray-200 p-3 rounded-lg max-w-md text-sm whitespace-pre-wrap">${text}</div>`;
-            
-            msgDiv.innerHTML = content;
-            chatBox.appendChild(msgDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
+        function appendMsg(role, content) {
+            const div = document.createElement('div');
+            div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            div.innerHTML = `
+                <div class="max-w-[85%] p-4 msg-${role === 'user' ? 'user' : 'bot'}">
+                    <p class="text-[8px] hacker-font mb-1 uppercase opacity-50">${role}</p>
+                    <div class="whitespace-pre-wrap text-sm">${content}</div>
+                </div>`;
+            document.getElementById('chatBox').appendChild(div);
+            document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
         }
 
-        function showTyping(show) {
-            typingIndicator.classList.toggle('hidden', !show);
+        function saveHistory() {
+            const hist = currentMode === 'normal' ? normalHistory : hackerHistory;
+            if (!hist.includes(currentChat)) hist.unshift(currentChat);
+            localStorage.setItem(currentMode === 'normal' ? 'drex_hist_n' : 'drex_hist_h', JSON.stringify(hist));
+            renderHistory();
         }
 
-        function startVoice() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) return alert("Speech API not supported.");
-            const recognition = new SpeechRecognition();
-            recognition.onresult = (e) => {
-                userInput.value = e.results[0][0].transcript;
-                autoGrow(userInput);
-            };
-            recognition.start();
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            const hist = currentMode === 'normal' ? normalHistory : hackerHistory;
+            list.innerHTML = '';
+            hist.forEach((session, i) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-3 text-[10px] truncate text-zinc-500 hover:bg-zinc-900 rounded-lg hacker-font transition";
+                btn.innerText = `LOG_${i}: ${session[0]?.content.substring(0, 20)}...`;
+                btn.onclick = () => {
+                    currentChat = session;
+                    document.getElementById('chatBox').innerHTML = '';
+                    session.forEach(m => appendMsg(m.role, m.content));
+                };
+                list.appendChild(btn);
+            });
         }
 
-        function handleFile(file) {
-            if (!file) return;
-            addMessage('user', `<i class="fas fa-file-alt"></i> File attached: ${file.name}`);
-            addMessage('assistant', `File analysis not enabled in this version. Request data parsing manually.`);
+        function toggleVoice() { isVoice = !isVoice; document.getElementById('voiceToggle').style.color = isVoice ? 'var(--hacker)' : '#ff4444'; if(!isVoice) window.speechSynthesis.cancel(); }
+        function newChat() { currentChat = []; document.getElementById('chatBox').innerHTML = ''; }
+        function saveSettings() { API_KEY = document.getElementById('apiKeyInput').value; localStorage.setItem('drex_key', API_KEY); closeModal('settingsModal'); }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function initMatrix() {
+            const c = document.getElementById("canvas-bg");
+            const ctx = c.getContext("2d");
+            c.width = window.innerWidth; c.height = window.innerHeight;
+            const drops = Array(Math.floor(c.width / 16)).fill(1);
+            function draw() {
+                ctx.fillStyle = "rgba(0,0,0,0.05)"; ctx.fillRect(0,0,c.width,c.height);
+                ctx.fillStyle = "#0F0"; ctx.font = "16px monospace";
+                drops.forEach((y, i) => {
+                    ctx.fillText(Math.floor(Math.random()*2), i*16, y*16);
+                    if(y*16 > c.height && Math.random() > 0.975) drops[i] = 0;
+                    drops[i]++;
+                });
+            }
+            setInterval(draw, 35);
         }
-
-        function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); }
-        function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
-        
-        function saveSettings() {
-            apiKey = document.getElementById('apiKey').value;
-            modelName = document.getElementById('modelName').value;
-            localStorage.setItem('drex_api_key', apiKey);
-            localStorage.setItem('drex_model', modelName);
-            modelDisplay.innerText = modelName;
-            closeSettings();
-        }
-
-        function newChat() {
-            chatBox.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-center text-gray-500"><i class="fas fa-brain text-5xl mb-4"></i><h2 class="text-2xl font-bold text-gray-300">SYSTEM INITIALIZED</h2></div>';
-        }
-
-        // Load API Key to input
-        document.getElementById('apiKey').value = apiKey;
-        document.getElementById('modelName').value = modelName;
     </script>
 </body>
 </html>
