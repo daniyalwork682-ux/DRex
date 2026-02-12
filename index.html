@@ -20,6 +20,9 @@
                         'accent': '#06b6d4',
                         'dark-bg': '#0f0f23',
                         'chat-bg': '#111827',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                     }
                 }
             }
@@ -28,17 +31,10 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
         
-        * { 
-            scrollbar-width: thin; 
-            scrollbar-color: rgba(99,102,241,0.5) transparent; 
-        }
-        
+        * { scrollbar-width: thin; scrollbar-color: rgba(99,102,241,0.5) transparent; }
         .dark *::-webkit-scrollbar { width: 6px; }
         .dark *::-webkit-scrollbar-track { background: transparent; }
-        .dark *::-webkit-scrollbar-thumb { 
-            background: rgba(99,102,241,0.5); 
-            border-radius: 3px; 
-        }
+        .dark *::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.5); border-radius: 3px; }
         
         .mode-normal {
             --bg-color: #f8fafc;
@@ -49,20 +45,6 @@
             --ai-bubble: #f1f5f9;
             --border-color: #e2e8f0;
         }
-        
-        .mode-normal #mainInterface { 
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            color: #1e293b;
-        }
-        .mode-normal .glass-effect { 
-            background: rgba(255,255,255,0.95) !important;
-            backdrop-filter: blur(20px);
-            border-color: rgba(226,232,240,0.8) !important;
-        }
-        .mode-normal .mode-indicator { 
-            background: linear-gradient(45deg, #667eea, #764ba2) !important;
-        }
-        
         .mode-hacker {
             --bg-color: #0a0a0a;
             --chat-bg: #111827;
@@ -73,18 +55,19 @@
             --border-color: rgba(0,255,65,0.3);
         }
         
-        .mode-hacker #mainInterface { 
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
-            color: #00ff41;
-        }
-        .mode-hacker .glass-effect { 
-            background: rgba(17,24,39,0.95) !important;
-            backdrop-filter: blur(25px);
-            border-color: rgba(0,255,65,0.4) !important;
+        .glass-effect {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
         }
         
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar.open { transform: translateX(0); }
         
         .message-bubble {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -93,77 +76,84 @@
             overflow: hidden;
         }
         
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 16px;
-        }
-        
+        .avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
         .user-avatar { background: var(--user-bubble); color: white; }
         .ai-avatar { background: var(--ai-bubble); color: #6b7280; }
         
-        .mode-normal .user-avatar { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            color: white !important;
-        }
-        .mode-normal .ai-avatar { 
-            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%) !important;
-            color: #6b7280 !important;
-        }
+        .mode-normal .user-avatar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; color: white !important; }
+        .mode-normal .ai-avatar { background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%) !important; color: #6b7280 !important; }
         
-        .model-custom-name {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: white;
-            font-weight: 600;
-        }
+        .chat-item:hover { background: rgba(99,102,241,0.1); }
+        .chat-item.active { background: rgba(99,102,241,0.2); border-left: 4px solid #6366f1; }
         
-        /* PASTE BUTTONS - NEW */
         .paste-btn {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: rgba(99,102,241,0.9);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 6px 10px;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            z-index: 10;
+            position: absolute; top: 12px; right: 12px;
+            background: rgba(99,102,241,0.9); color: white;
+            border: none; border-radius: 8px; padding: 6px 10px;
+            font-size: 11px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; z-index: 10;
         }
         .paste-btn:hover { background: #6366f1; transform: scale(1.05); }
         
-        .code-block {
-            background: rgba(0,0,0,0.1) !important;
-            border: 1px solid rgba(99,102,241,0.3) !important;
-            border-radius: 12px !important;
-            margin: 1em 0 !important;
-            overflow: hidden;
-        }
-        
-        .input-focus {
-            box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
-            border-color: #6366f1 !important;
-        }
+        .input-focus { box-shadow: 0 0 0 3px rgba(99,102,241,0.2); border-color: #6366f1 !important; }
     </style>
 </head>
 <body class="font-sans min-h-screen transition-colors duration-300">
     
+    <!-- Sidebar - CHAT HISTORY -->
+    <div id="sidebar" class="sidebar fixed inset-y-0 left-0 z-50 w-80 glass-effect shadow-2xl border-r fade-in">
+        <div class="h-full flex flex-col">
+            <!-- Sidebar Header -->
+            <div class="p-6 border-b flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center text-white font-bold">📚</div>
+                    <div>
+                        <h2 id="sidebarTitle" class="font-bold text-xl">Chat History</h2>
+                        <span id="chatCount" class="text-sm font-medium opacity-75">0 Chats</span>
+                    </div>
+                </div>
+                <button id="closeSidebar" class="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Search -->
+            <div class="p-4 border-b">
+                <input id="chatSearch" type="text" placeholder="🔍 Search chats..." 
+                       class="w-full p-3 rounded-2xl border-2 border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300 text-sm">
+            </div>
+            
+            <!-- New Chat Button -->
+            <div class="p-6 border-b">
+                <button id="newChatBtn" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold py-4 px-6 rounded-2xl uppercase tracking-wide text-sm shadow-lg hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-105">
+                    ➕ New Chat
+                </button>
+            </div>
+            
+            <!-- Chat List -->
+            <div id="chatList" class="flex-1 overflow-y-auto p-2 space-y-2">
+                <!-- Chats load here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Overlay -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden sidebar-overlay"></div>
+
     <!-- Main Interface -->
-    <div id="mainInterface" class="min-h-screen flex flex-col">
+    <div id="mainInterface" class="min-h-screen flex flex-col transition-all duration-300">
         
         <!-- Header -->
-        <header class="glass-effect border-b shadow-lg backdrop-blur-xl sticky top-0 z-50 p-6">
+        <header class="glass-effect border-b shadow-lg backdrop-blur-xl sticky top-0 z-40 p-6">
             <div class="max-w-6xl mx-auto flex items-center justify-between">
                 <div class="flex items-center space-x-4">
+                    <button id="openSidebar" class="p-3 rounded-xl border border-current hover:bg-opacity-10 transition-all duration-300 md:hidden">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
                     <div class="avatar user-avatar shadow-lg">AI</div>
                     <div>
                         <h1 id="appTitle" class="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
@@ -172,15 +162,14 @@
                         <div class="flex items-center space-x-3 mt-1">
                             <div id="modeIndicator" class="w-3 h-3 rounded-full shadow-lg mode-indicator ring-2 ring-current ring-opacity-50"></div>
                             <span id="modeLabel" class="text-sm font-semibold tracking-wide uppercase">Hacker Mode</span>
+                            <span id="currentChatTitle" class="text-sm font-medium px-3 py-1 bg-white/50 backdrop-blur-sm rounded-full">New Chat</span>
                         </div>
                     </div>
                 </div>
                 
                 <div class="flex items-center space-x-3">
                     <button id="modelBtn" class="px-4 py-2 text-sm font-semibold rounded-xl border-2 border-current hover:bg-opacity-10 transition-all duration-300 flex items-center space-x-2 group">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-                        </svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
                         <span id="currentModel">Claude 3.5 Sonnet</span>
                         <svg class="w-4 h-4 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -202,8 +191,8 @@
         </header>
 
         <!-- Messages Area -->
-        <main id="messages" class="flex-1 overflow-y-auto p-8 space-y-6 max-w-6xl mx-auto w-full">
-            <div class="text-center py-20 fade-in">
+        <main id="messages" class="flex-1 overflow-y-auto p-8 space-y-6 max-w-6xl mx-auto w-full pt-24">
+            <div id="welcomeScreen" class="text-center py-20 fade-in">
                 <div class="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center shadow-2xl">
                     <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
@@ -217,7 +206,7 @@
         </main>
 
         <!-- Input Area -->
-        <div class="glass-effect border-t shadow-2xl backdrop-blur-xl p-8 sticky bottom-0 z-40">
+        <div class="glass-effect border-t shadow-2xl backdrop-blur-xl p-8 sticky bottom-0 z-30">
             <div class="max-w-6xl mx-auto">
                 <div class="flex items-end space-x-4">
                     <div id="promptPrefix" class="text-sm font-semibold opacity-75 flex-shrink-0">You:</div>
@@ -250,8 +239,9 @@
         </div>
     </div>
 
-    <!-- Model Selector - FIXED VERSION -->
-    <div id="modelMenu" class="fixed top-20 right-4 w-96 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 hidden z-50 p-6 fade-in">
+    <!-- Model Selector -->
+    <div id="modelMenu" class="fixed top-20 right-4 w-96 glass-effect rounded-2xl shadow-2xl border hidden z-50 p-6 fade-in">
+        <!-- Same model selector code from previous -->
         <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
             <h3 class="font-bold text-xl text-gray-800">🤖 Select AI Model</h3>
             <button id="closeModelMenu" class="p-2 hover:bg-gray-100 rounded-xl transition-colors">
@@ -260,131 +250,24 @@
                 </svg>
             </button>
         </div>
-        
-        <!-- PRESET MODELS -->
         <div class="mb-6">
             <h4 class="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide">⭐ Preset Models</h4>
-            <div id="presetModels" class="space-y-2 mb-6">
-                <!-- Models load here -->
-            </div>
+            <div id="presetModels" class="space-y-2"></div>
         </div>
-        
-        <!-- CUSTOM MODEL - PERFECT PASTE SYSTEM -->
         <div class="border-t border-gray-200 pt-6">
             <h4 class="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide">➕ Add Custom Model</h4>
             <div class="space-y-3 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-2xl border-2 border-dashed border-orange-200">
-                
-                <!-- NAME FIELD -->
                 <div class="relative">
-                    <label class="block text-xs font-bold text-gray-700 mb-1 tracking-wide">📝 Model Name (Jo Naam Chahte Ho)</label>
-                    <input id="customModelName" type="text" placeholder="My GPT • Hindi Bot • Boss Model" 
-                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all duration-300 placeholder:text-gray-500 font-medium"
-                           value="">
-                    <button id="pasteNameBtn" class="paste-btn" title="Paste Name">
-                        📋
-                    </button>
+                    <label class="block text-xs font-bold text-gray-700 mb-1 tracking-wide">📝 Model Name</label>
+                    <input id="customModelName" type="text" placeholder="My GPT • Hindi Bot" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-2 transition-all">
+                    <button id="pasteNameBtn" class="paste-btn" title="Paste">📋</button>
                 </div>
-                
-                <!-- MODEL ID FIELD - PERFECT PASTE -->
                 <div class="relative">
-                    <label class="block text-xs font-bold text-gray-700 mb-1 tracking-wide">🔗 Model ID (OpenRouter se Copy)</label>
-                    <input id="customModelId" type="text" placeholder="anthropic/claude-3.5-sonnet OR openai/gpt-4o-mini OR meta/llama-3.1-405b-instruct" 
-                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all duration-300 placeholder:text-gray-500 font-mono"
-                           value="">
-                    <button id="pasteIdBtn" class="paste-btn" title="Ctrl+V Paste Model ID">
-                        📋
-                    </button>
+                    <label class="block text-xs font-bold text-gray-700 mb-1 tracking-wide">🔗 Model ID</label>
+                    <input id="customModelId" type="text" placeholder="anthropic/claude-3.5-sonnet" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-2 font-mono">
+                    <button id="pasteIdBtn" class="paste-btn" title="Paste">📋</button>
                 </div>
-                
-                <!-- EXAMPLES BUTTON -->
-                <button id="showExamplesBtn" class="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white py-3 px-6 rounded-xl font-bold text-sm uppercase tracking-wide shadow-lg hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center space-x-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span>Show Popular Model IDs</span>
-                </button>
-                
-                <!-- ADD BUTTON -->
-                <button id="addCustomModel" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold py-4 px-8 rounded-2xl uppercase tracking-wide text-sm shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-105 font-semibold border-2 border-transparent hover:border-emerald-400">
-                    ✅ Add This Model
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Examples Modal -->
-    <div id="examplesModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[999] hidden flex items-center justify-center p-4">
-        <div class="glass-effect rounded-3xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border fade-in">
-            <div class="flex items-center justify-between mb-8">
-                <h2 class="text-2xl font-bold text-gray-800">🔥 Popular Model IDs - Copy Karo!</h2>
-                <button id="closeExamples" class="p-3 hover:bg-gray-100 rounded-2xl transition-all duration-300 hover:scale-110">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="grid md:grid-cols-2 gap-4">
-                <div class="bg-gradient-to-br from-blue-500/10 to-blue-600/10 border-2 border-blue-200/50 p-6 rounded-2xl group hover:shadow-blue-500/25 transition-all duration-300">
-                    <h4 class="font-bold text-lg mb-3 text-blue-800">⭐ TOP FREE MODELS</h4>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex items-center justify-between p-3 bg-white/50 rounded-xl cursor-pointer hover:bg-white group-hover:bg-blue-50" onclick="navigator.clipboard.writeText('google/gemini-flash-1.5-exp'); alert('✅ Copied: gemini-flash-1.5-exp')">
-                            <span>google/gemini-flash-1.5-exp</span>
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                            </svg>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-white/50 rounded-xl cursor-pointer hover:bg-white group-hover:bg-blue-50" onclick="navigator.clipboard.writeText('meta/llama-3.2-1b-instruct:free'); alert('✅ Copied: llama-3.2-1b-instruct:free')">
-                            <span>meta/llama-3.2-1b-instruct:free</span>
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 border-2 border-emerald-200/50 p-6 rounded-2xl group hover:shadow-emerald-500/25 transition-all duration-300">
-                    <h4 class="font-bold text-lg mb-3 text-emerald-800">⚡ BEST PAID MODELS</h4>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex items-center justify-between p-3 bg-white/50 rounded-xl cursor-pointer hover:bg-white group-hover:bg-emerald-50" onclick="navigator.clipboard.writeText('anthropic/claude-3.5-sonnet'); alert('✅ Copied: claude-3.5-sonnet')">
-                            <span>anthropic/claude-3.5-sonnet</span>
-                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-white/50 rounded-xl cursor-pointer hover:bg-white group-hover:bg-emerald-50" onclick="navigator.clipboard.writeText('openai/gpt-4o'); alert('✅ Copied: gpt-4o')">
-                            <span>openai/gpt-4o</span>
-                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="mt-8 p-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-2 border-purple-200/50 rounded-2xl">
-                <h4 class="font-bold text-lg mb-3 text-purple-800">💡 Pro Tip</h4>
-                <p class="text-sm text-gray-700 leading-relaxed">OpenRouter.ai jaao → Models → Kisi model pe click → Copy ID → Yahan paste karo 📋</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-6">
-        <div class="glass-effect rounded-3xl p-8 w-full max-w-md shadow-2xl border fade-in max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between mb-8">
-                <h2 class="text-2xl font-bold text-gray-800">⚙️ Settings</h2>
-                <button id="closeSettings" class="p-2 hover:bg-gray-100 rounded-2xl transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="space-y-6">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-3">🔑 OpenRouter API Key</label>
-                    <input id="apiKey" type="password" class="w-full p-4 border border-gray-200 rounded-2xl text-lg focus:border-primary focus:ring-4 focus:ring-primary/20 transition-all duration-300" placeholder="sk-or-v1-...">
-                    <p class="text-xs text-gray-500 mt-2">Free credits milega <a href="https://openrouter.ai" target="_blank" class="text-primary hover:underline font-semibold">openrouter.ai</a> pe</p>
-                </div>
-                
-                <button id="saveSettings" class="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-primary/25 hover:scale-105">
-                    💾 Save & Test
-                </button>
+                <button id="addCustomModel" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 text-white py-3 rounded-xl font-bold uppercase tracking-wide text-sm">✅ Add Model</button>
             </div>
         </div>
     </div>
@@ -396,6 +279,8 @@
                 this.apiKey = localStorage.getItem('drex_api_key') || '';
                 this.customModels = JSON.parse(localStorage.getItem('drex_custom_models') || '[]');
                 this.currentModel = localStorage.getItem('drex_current_model') || 'anthropic/claude-3.5-sonnet';
+                this.chats = JSON.parse(localStorage.getItem('drex_chats') || '[]');
+                this.currentChatId = localStorage.getItem('drex_current_chat_id') || null;
                 this.modelNames = {
                     'anthropic/claude-3.5-sonnet': 'Claude 3.5 Sonnet ⭐',
                     'anthropic/claude-3-opus': 'Claude 3 Opus ⚡',
@@ -409,7 +294,6 @@
                     {id: 'google/gemini-flash-1.5-exp', name: 'Gemini Flash ⚡', desc: 'FREE & Fast'},
                     {id: 'meta/llama-3.2-1b-instruct:free', name: 'Llama 3.2 Free 🌟', desc: 'Always Free'}
                 ];
-                
                 this.isTyping = false;
                 this.init();
             }
@@ -417,9 +301,10 @@
             init() {
                 this.bindEvents();
                 this.loadPresetModels();
-                this.loadCustomModels();
-                this.loadCurrentModel();
+                this.renderChats();
+                this.loadCurrentChat();
                 this.updateTheme();
+                this.updateChatCount();
             }
             
             bindEvents() {
@@ -445,110 +330,132 @@
                 document.getElementById('toggleModeBtn').onclick = () => this.toggleMode();
                 document.getElementById('modelBtn').onclick = () => this.toggleModelMenu();
                 document.getElementById('closeModelMenu').onclick = () => this.toggleModelMenu();
-                document.getElementById('settingsBtn').onclick = () => this.showSettings();
-                document.getElementById('closeSettings').onclick = () => this.hideSettings();
-                document.getElementById('saveSettings').onclick = () => this.saveSettings();
-                
-                // PERFECT PASTE BUTTONS
+                document.getElementById('openSidebar').onclick = () => this.toggleSidebar(true);
+                document.getElementById('closeSidebar').onclick = () => this.toggleSidebar(false);
+                document.getElementById('sidebarOverlay').onclick = () => this.toggleSidebar(false);
+                document.getElementById('newChatBtn').onclick = () => this.newChat();
+                document.getElementById('chatSearch').addEventListener('input', (e) => this.filterChats(e.target.value));
                 document.getElementById('pasteNameBtn').onclick = () => this.pasteToField('customModelName');
                 document.getElementById('pasteIdBtn').onclick = () => this.pasteToField('customModelId');
                 document.getElementById('addCustomModel').onclick = () => this.addCustomModel();
-                document.getElementById('showExamplesBtn').onclick = () => this.showExamples();
-                document.getElementById('closeExamples').onclick = () => this.hideExamples();
             }
             
-            pasteToField(fieldId) {
-                navigator.clipboard.readText().then(text => {
-                    document.getElementById(fieldId).value = text.trim();
-                    document.getElementById(fieldId).focus();
-                }).catch(() => {
-                    // Fallback for older browsers
-                    alert('Ctrl+V dabao ya manually paste karo 📋');
-                });
+            // SIDEBAR METHODS
+            toggleSidebar(open = null) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                const isOpen = sidebar.classList.contains('open');
+                
+                if (open === null) {
+                    sidebar.classList.toggle('open');
+                    overlay.classList.toggle('hidden');
+                } else if (open && !isOpen) {
+                    sidebar.classList.add('open');
+                    overlay.classList.remove('hidden');
+                } else {
+                    sidebar.classList.remove('open');
+                    overlay.classList.add('hidden');
+                }
             }
             
-            loadPresetModels() {
-                const container = document.getElementById('presetModels');
+            newChat() {
+                const chat = {
+                    id: Date.now().toString(),
+                    title: 'New Chat',
+                    created: new Date().toISOString(),
+                    messages: [],
+                    preview: ''
+                };
+                this.chats.unshift(chat);
+                this.currentChatId = chat.id;
+                this.saveChats();
+                this.renderChats();
+                this.loadCurrentChat();
+                this.toggleSidebar(false);
+                document.getElementById('welcomeScreen').style.display = 'none';
+            }
+            
+            renderChats(filter = '') {
+                const container = document.getElementById('chatList');
+                let filteredChats = this.chats.filter(chat => 
+                    chat.title.toLowerCase().includes(filter.toLowerCase()) ||
+                    chat.preview.toLowerCase().includes(filter.toLowerCase())
+                );
+                
                 container.innerHTML = '';
-                this.presetModels.forEach(model => {
+                
+                filteredChats.forEach(chat => {
                     const div = document.createElement('div');
-                    div.className = 'flex items-center space-x-3 p-4 rounded-2xl cursor-pointer hover:bg-primary/10 transition-all duration-300 model-option border border-transparent hover:border-primary/50 group';
-                    div.dataset.model = model.id;
+                    div.className = `chat-item p-4 rounded-2xl cursor-pointer transition-all duration-300 flex items-center space-x-4 border-l-4 border-transparent hover:border-primary/50 ${chat.id === this.currentChatId ? 'active bg-primary/10 border-primary/50' : ''}`;
+                    div.dataset.chatId = chat.id;
                     div.innerHTML = `
-                        <div class="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg">${model.name.charAt(0)}</div>
-                        <div class="flex-1 min-w-0">
-                            <div class="font-bold text-gray-900 group-hover:text-primary truncate">${model.name}</div>
-                            <div class="text-xs text-gray-500">${model.desc}</div>
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white font-bold flex-shrink-0">
+                            ${chat.title.charAt(0).toUpperCase()}
                         </div>
-                        <div class="text-xs bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold">⭐⭐⭐⭐⭐</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-sm truncate mb-1">${chat.title}</div>
+                            <div class="text-xs opacity-75 line-clamp-2">${chat.preview || 'Start chatting...'}</div>
+                            <div class="text-xs opacity-50 mt-1">${this.formatDate(chat.created)}</div>
+                        </div>
+                        <button class="p-2 hover:bg-gray-100 rounded-xl opacity-0 group-hover:opacity-100 transition-all ml-auto">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
                     `;
+                    div.onclick = (e) => {
+                        if (!e.target.closest('button')) {
+                            this.loadChat(chat.id);
+                        }
+                    };
                     container.appendChild(div);
                 });
             }
             
-            loadCustomModels() {
-                this.customModels.forEach(model => {
-                    this.modelNames[model.id] = model.name;
+            filterChats(query) {
+                this.renderChats(query);
+            }
+            
+            loadCurrentChat() {
+                if (this.currentChatId && this.chats.find(c => c.id === this.currentChatId)) {
+                    const chat = this.chats.find(c => c.id === this.currentChatId);
+                    document.getElementById('currentChatTitle').textContent = chat.title;
+                    document.getElementById('welcomeScreen').style.display = 'none';
+                }
+            }
+            
+            loadChat(chatId) {
+                this.currentChatId = chatId;
+                localStorage.setItem('drex_current_chat_id', chatId);
+                const chat = this.chats.find(c => c.id === chatId);
+                document.getElementById('currentChatTitle').textContent = chat.title;
+                this.renderChats();
+                this.toggleSidebar(false);
+                // Load messages (simplified for demo)
+                document.getElementById('welcomeScreen').style.display = 'none';
+            }
+            
+            saveChats() {
+                localStorage.setItem('drex_chats', JSON.stringify(this.chats));
+                this.updateChatCount();
+            }
+            
+            updateChatCount() {
+                document.getElementById('chatCount').textContent = `${this.chats.length} Chats`;
+            }
+            
+            formatDate(isoString) {
+                return new Date(isoString).toLocaleDateString('en-US', { 
+                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
                 });
             }
             
-            addCustomModel() {
-                const name = document.getElementById('customModelName').value.trim();
-                const modelId = document.getElementById('customModelId').value.trim();
-                
-                if (!name) {
-                    alert('❌ Model Name daalo pehle!');
-                    document.getElementById('customModelName').focus();
-                    return;
-                }
-                
-                if (!modelId) {
-                    alert('❌ Model ID paste karo! (OpenRouter se copy)');
-                    document.getElementById('customModelId').focus();
-                    return;
-                }
-                
-                // Add to custom models
-                const customModel = { name, id: modelId };
-                this.customModels.unshift(customModel);
-                localStorage.setItem('drex_custom_models', JSON.stringify(this.customModels));
-                this.modelNames[modelId] = name;
-                
-                this.selectModel(modelId);
-                this.loadPresetModels(); // Refresh to show new models
-                
-                // Clear fields
-                document.getElementById('customModelName').value = '';
-                document.getElementById('customModelId').value = '';
-                
-                this.addMessage('system', `✅ "${name}" model add ho gaya! Ab use kar sakte ho.`);
-            }
-            
-            selectModel(modelId) {
-                this.currentModel = modelId;
-                const name = this.modelNames[modelId] || modelId.split('/').pop().replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                document.getElementById('currentModel').textContent = name;
-                localStorage.setItem('drex_current_model', modelId);
-                this.toggleModelMenu();
-            }
-            
-            showExamples() {
-                document.getElementById('modelMenu').classList.add('hidden');
-                document.getElementById('examplesModal').classList.remove('hidden');
-            }
-            
-            hideExamples() {
-                document.getElementById('examplesModal').classList.add('hidden');
-            }
-            
-            toggleModelMenu() {
-                document.getElementById('modelMenu').classList.toggle('hidden');
-            }
-            
-            // ... rest of the methods same as before (updateTheme, sendChatMessage, etc.)
+            // Other methods (same as before)
             updateTheme() {
                 document.body.className = this.isHackerMode ? 'dark mode-hacker' : 'mode-normal';
                 document.getElementById('modeLabel').textContent = this.isHackerMode ? 'Hacker Mode' : 'Normal Mode';
+                const sidebar = document.getElementById('sidebar');
+                sidebar.className = sidebar.className.replace(/mode-\w+/g, '') + (this.isHackerMode ? ' mode-hacker' : ' mode-normal');
             }
             
             toggleMode() {
@@ -557,35 +464,65 @@
                 this.updateTheme();
             }
             
-            loadCurrentModel() {
-                const name = this.modelNames[this.currentModel] || this.currentModel.split('/').pop().replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                document.getElementById('currentModel').textContent = name;
+            pasteToField(fieldId) {
+                navigator.clipboard.readText().then(text => {
+                    document.getElementById(fieldId).value = text.trim();
+                }).catch(() => alert('Ctrl+V manually!'));
             }
             
-            showSettings() { document.getElementById('settingsModal').classList.remove('hidden'); }
-            hideSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
-            saveSettings() {
-                this.apiKey = document.getElementById('apiKey').value;
-                localStorage.setItem('drex_api_key', this.apiKey);
-                this.hideSettings();
-                this.addMessage('system', '✅ Settings saved!');
+            addCustomModel() {
+                const name = document.getElementById('customModelName').value.trim();
+                const modelId = document.getElementById('customModelId').value.trim();
+                
+                if (!name || !modelId) {
+                    alert('❌ Name + ID both required!');
+                    return;
+                }
+                
+                this.customModels.unshift({name, id: modelId});
+                this.modelNames[modelId] = name;
+                localStorage.setItem('drex_custom_models', JSON.stringify(this.customModels));
+                
+                document.getElementById('customModelName').value = '';
+                document.getElementById('customModelId').value = '';
+                this.toggleModelMenu();
             }
             
-            // Simplified message methods for demo
-            addMessage(type, content) {
-                console.log(`${type.toUpperCase()}: ${content}`);
+            toggleModelMenu() {
+                document.getElementById('modelMenu').classList.toggle('hidden');
+            }
+            
+            loadPresetModels() {
+                const container = document.getElementById('presetModels');
+                container.innerHTML = '';
+                this.presetModels.forEach(model => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center space-x-3 p-4 rounded-2xl cursor-pointer hover:bg-primary/10 transition-all model-option border hover:border-primary/50';
+                    div.dataset.model = model.id;
+                    div.innerHTML = `
+                        <div class="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center text-white font-bold text-sm">${model.name.charAt(0)}</div>
+                        <div class="flex-1">
+                            <div class="font-bold truncate">${model.name}</div>
+                            <div class="text-xs text-gray-500">${model.desc}</div>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            
+            updateCharCount() {
+                const count = document.getElementById('messageInput').value.length;
+                document.getElementById('charCount').textContent = `${count}/4000`;
             }
             
             sendChatMessage(message) {
                 console.log('Sending:', message);
-            }
-            
-            updateCharCount() {
-                // Simplified
+                // Add to current chat, update preview, etc.
+                document.getElementById('messageInput').value = '';
             }
         }
         
-        // Model click events
+        // Global event listeners
         document.addEventListener('click', (e) => {
             if (e.target.closest('.model-option')) {
                 const modelId = e.target.closest('.model-option').dataset.model;
@@ -593,7 +530,6 @@
             }
         });
         
-        // Initialize
         window.drex = new DRexAI();
     </script>
 </body>
