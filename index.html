@@ -3,149 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DRex | Dual Core</title>
+    <title>DRex | Dual Shield</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;500&display=swap');
         
-        :root { --accent: #00ff41; --bg: #0a0a0a; --card: #141414; }
-        body { background-color: var(--bg); color: #e5e7eb; font-family: 'Inter', sans-serif; overflow: hidden; }
+        :root { --hacker-green: #00ff41; --user-blue: #2563eb; }
+        body { background-color: #050505; color: #e5e7eb; font-family: 'Inter', sans-serif; overflow: hidden; transition: all 0.5s ease; }
         
-        /* Matrix Background */
-        #matrix { position: fixed; top: 0; left: 0; z-index: -1; opacity: 0.1; pointer-events: none; }
+        /* Hacker Mode Theme Overrides */
+        body.hacker-active { background-color: #000; color: var(--hacker-green); font-family: 'Fira Code', monospace; }
+        .hacker-active .sidebar { background: #000; border-right: 1px solid var(--hacker-green); }
+        .hacker-active .bot-bubble { background: #000; border: 1px solid var(--hacker-green); color: var(--hacker-green); }
+        .hacker-active .user-bubble { background: var(--hacker-green); color: #000; font-weight: bold; }
+        .hacker-active .header { border-bottom: 1px solid var(--hacker-green); }
+        .hacker-active .input-container { border: 1px solid var(--hacker-green) !important; background: #000 !important; }
 
-        /* Sidebar */
+        /* Normal Mode Styles */
         .sidebar { background: #0f0f0f; border-right: 1px solid #222; }
-        
-        /* Messages */
-        .chat-bubble { max-width: 85%; padding: 16px; border-radius: 20px; font-size: 0.95rem; line-height: 1.6; }
-        .user-bubble { background: #2563eb; color: white; border-bottom-right-radius: 4px; }
+        .chat-bubble { max-width: 85%; padding: 16px; border-radius: 20px; font-size: 0.95rem; line-height: 1.6; transition: all 0.3s; }
+        .user-bubble { background: var(--user-blue); color: white; border-bottom-right-radius: 4px; }
         .bot-bubble { background: #1f1f1f; border: 1px solid #333; border-bottom-left-radius: 4px; }
         
-        /* Hacker Terminal */
-        .hacker-terminal { background: #000; color: var(--accent); font-family: 'Fira Code', monospace; font-size: 0.85rem; height: 100%; overflow-y: auto; padding: 15px; border-radius: 12px; border: 1px solid #222; }
-        
-        /* Animations */
+        #matrix-canvas { position: fixed; top: 0; left: 0; z-index: -1; opacity: 0; transition: opacity 1s; pointer-events: none; }
+        body.hacker-active #matrix-canvas { opacity: 0.15; }
+
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
-<body class="h-screen flex flex-col md:flex-row">
-    <canvas id="matrix"></canvas>
+<body class="h-screen flex flex-col md:flex-row" id="mainBody">
+    <canvas id="matrix-canvas"></canvas>
 
-    <aside class="sidebar w-full md:w-72 flex flex-col z-20">
+    <aside class="sidebar w-full md:w-72 flex flex-col z-20 transition-all">
         <div class="p-6 border-b border-zinc-800 flex items-center gap-3">
-            <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center text-black">
-                <i class="fas fa-terminal"></i>
-            </div>
-            <h1 class="text-xl font-bold tracking-tight">DRex Dual</h1>
+            <i class="fas fa-shield-halved text-xl" id="logoIcon"></i>
+            <h1 class="text-xl font-bold tracking-tight" id="mainTitle">DRex Core</h1>
         </div>
         
         <div class="p-4 space-y-2">
-            <button onclick="setMode('normal')" id="btnNormal" class="w-full text-left p-3 rounded-xl text-sm bg-zinc-800 text-white font-bold transition">
-                <i class="fas fa-user mr-2"></i> Normal Mode
+            <button onclick="switchMode('normal')" class="w-full text-left p-3 rounded-xl text-sm hover:bg-zinc-800 transition">
+                <i class="fas fa-house mr-2"></i> Normal Mode
             </button>
-            <button onclick="setMode('hacker')" id="btnHacker" class="w-full text-left p-3 rounded-xl text-sm text-zinc-400 hover:bg-zinc-800 hover:text-white transition">
-                <i class="fas fa-user-secret mr-2"></i> Hacker Mode
+            <button onclick="requestHackerAccess()" class="w-full text-left p-3 rounded-xl text-sm hover:bg-zinc-800 transition">
+                <i class="fas fa-skull mr-2"></i> Hacker Mode (Locked)
             </button>
         </div>
 
         <div id="historyList" class="flex-1 overflow-y-auto p-4 space-y-2 border-t border-zinc-800"></div>
 
-        <div class="p-4 border-t border-zinc-800 space-y-2">
-            <button onclick="newChat()" class="w-full bg-white text-black py-2.5 rounded-xl font-bold text-sm hover:bg-gray-200 transition">New Session</button>
-            <button onclick="openModal('settingsModal')" class="w-full bg-zinc-900 text-zinc-400 py-2 rounded-lg text-xs hover:text-white transition">Settings</button>
+        <div class="p-4 border-t border-zinc-800">
+            <button onclick="openModal('settingsModal')" class="w-full bg-zinc-900 text-zinc-400 py-2 rounded-lg text-xs hover:text-white transition">Config System</button>
         </div>
     </aside>
 
     <main class="flex-1 flex flex-col relative h-full">
-        <header class="h-14 border-b border-zinc-800 bg-black/20 flex items-center justify-between px-6 backdrop-blur-md z-10">
-            <span class="text-xs text-zinc-500 uppercase tracking-widest font-bold" id="modeIndicator">Normal Mode</span>
-            <span id="modelStatus" class="text-xs text-green-500 font-medium">System Ready</span>
+        <header class="header h-14 border-b border-zinc-800 bg-black/20 flex items-center justify-between px-6 backdrop-blur-md z-10">
+            <span class="text-xs uppercase tracking-widest font-bold" id="modeText">Normal Interface</span>
+            <div class="flex items-center gap-4">
+                <button onclick="startVoice()" class="text-zinc-500 hover:text-white transition"><i class="fas fa-microphone"></i></button>
+                <span id="status" class="text-[10px] text-green-500 font-bold">ONLINE</span>
+            </div>
         </header>
 
-        <div id="normalArea" class="flex-1 flex flex-col overflow-hidden">
-            <div id="chatBox" class="flex-1 overflow-y-auto p-6 space-y-6">
-                <div id="welcome" class="h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto opacity-40">
-                    <i class="fas fa-sparkles text-5xl mb-6 text-green-500"></i>
-                    <h2 class="text-2xl font-bold mb-2">DRex AI</h2>
-                    <p class="text-sm">Select mode from sidebar or ask a question.</p>
-                </div>
+        <div id="chatBox" class="flex-1 overflow-y-auto p-6 space-y-6">
+            <div id="welcome" class="h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto opacity-30">
+                <i class="fas fa-atom text-5xl mb-6"></i>
+                <h2 class="text-2xl font-bold">DRex Dual Core</h2>
+                <p class="text-sm mt-2">Upload files, generate media, or start a secure session.</p>
             </div>
-            
-            <footer class="p-6">
-                <div class="max-w-4xl mx-auto bg-zinc-900/80 border border-zinc-800 rounded-3xl p-2 flex items-end gap-2 shadow-2xl focus-within:border-zinc-600 transition">
-                    <label class="p-3 text-zinc-500 hover:text-white cursor-pointer"><i class="fas fa-plus-circle"></i><input type="file" class="hidden" onchange="handleFile(this.files[0])"></label>
-                    <textarea id="userInput" rows="1" class="flex-1 bg-transparent outline-none p-3 text-sm text-white resize-none" placeholder="Ask anything..." oninput="this.style.height='';this.style.height=this.scrollHeight+'px'"></textarea>
-                    <button onclick="processCommand()" class="bg-white text-black h-11 w-11 rounded-full font-bold hover:bg-green-500 transition flex items-center justify-center shrink-0"><i class="fas fa-arrow-up"></i></button>
-                </div>
-            </footer>
         </div>
 
-        <div id="hackerArea" class="flex-1 p-6 hidden">
-            <div class="hacker-terminal">
-                <div id="termOutput">root@drex-dual:~# <span class="animate-pulse">_</span></div>
-                <input type="text" id="termInput" class="bg-transparent outline-none w-full text-green-500" autofocus onkeydown="handleTerminal(event)">
+        <footer class="p-6">
+            <div class="max-w-4xl mx-auto input-container bg-zinc-900/80 border border-zinc-800 rounded-3xl p-2 flex items-end gap-2 shadow-2xl transition-all">
+                <label class="p-3 text-zinc-500 hover:text-white cursor-pointer"><i class="fas fa-paperclip"></i><input type="file" class="hidden" onchange="handleFile(this.files[0])"></label>
+                <textarea id="userInput" rows="1" class="flex-1 bg-transparent outline-none p-3 text-sm resize-none" placeholder="Enter command or query..." oninput="this.style.height='';this.style.height=this.scrollHeight+'px'"></textarea>
+                <button onclick="processCommand()" class="bg-white text-black h-11 w-11 rounded-full font-bold hover:scale-105 transition flex items-center justify-center shrink-0"><i class="fas fa-arrow-up"></i></button>
             </div>
-        </div>
+        </footer>
     </main>
 
-    <div id="settingsModal" class="fixed inset-0 bg-black/90 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div id="passwordModal" class="fixed inset-0 bg-black/95 hidden z-[100] flex items-center justify-center">
+        <div class="bg-zinc-900 p-8 rounded-3xl border border-red-500 text-center max-w-xs w-full">
+            <i class="fas fa-lock text-3xl text-red-500 mb-4"></i>
+            <h2 class="text-lg font-bold mb-4">Security Verification</h2>
+            <input type="password" id="hackerPass" class="w-full bg-black border border-zinc-800 p-3 rounded-xl text-center text-red-500 mb-4 outline-none focus:border-red-500" placeholder="Enter 3-Digit Code">
+            <button onclick="verifyHackerPass()" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold">Authorize Access</button>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="fixed inset-0 bg-black/95 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl max-w-md w-full">
-            <h1 class="text-xl font-bold mb-6">Configuration</h1>
-            <div class="space-y-4">
-                <input type="password" id="apiKeyInput" class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none" placeholder="OpenRouter API Key">
-                <input type="text" id="modelInput" class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none" placeholder="Model (e.g., google/gemini-2.0-flash-001)">
-                <button onclick="saveSettings()" class="w-full bg-green-600 text-black py-3 rounded-xl font-bold text-sm mt-4">Save & Connect</button>
-            </div>
+            <h1 class="text-xl font-bold mb-6">System Config</h1>
+            <input type="password" id="apiKeyInput" class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none mb-4" placeholder="OpenRouter API Key">
+            <input type="text" id="modelInput" class="w-full bg-black border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none" placeholder="Model (e.g., google/gemini-2.0-flash-001)">
+            <button onclick="saveSettings()" class="w-full bg-white text-black py-3 rounded-xl font-bold text-sm mt-6">Apply Configuration</button>
+            <button onclick="closeModal('settingsModal')" class="w-full text-zinc-500 text-xs mt-3">Cancel</button>
         </div>
     </div>
 
     <script>
         let API_KEY = localStorage.getItem('drex_key') || '';
         let MODEL_NAME = localStorage.getItem('drex_model') || 'google/gemini-2.0-flash-001';
-        let chatHistory = JSON.parse(localStorage.getItem('drex_v10_history')) || [];
+        let chatHistory = JSON.parse(localStorage.getItem('drex_v11_history')) || [];
         let currentSession = [];
-        let currentMode = 'normal';
+        let isHacker = false;
 
         window.onload = () => {
             initMatrix();
             renderHistory();
-            if (!API_KEY) openModal('settingsModal');
             document.getElementById('apiKeyInput').value = API_KEY;
             document.getElementById('modelInput').value = MODEL_NAME;
         };
 
-        function setMode(mode) {
-            currentMode = mode;
-            document.getElementById('modeIndicator').innerText = mode === 'normal' ? "Normal Mode" : "Hacker Mode";
-            document.getElementById('normalArea').classList.toggle('hidden', mode === 'hacker');
-            document.getElementById('hackerArea').classList.toggle('hidden', mode === 'normal');
-            document.getElementById('btnNormal').className = mode === 'normal' ? 'w-full text-left p-3 rounded-xl text-sm bg-zinc-800 text-white font-bold transition' : 'w-full text-left p-3 rounded-xl text-sm text-zinc-400 hover:bg-zinc-800 hover:text-white transition';
-            document.getElementById('btnHacker').className = mode === 'hacker' ? 'w-full text-left p-3 rounded-xl text-sm bg-zinc-800 text-white font-bold transition' : 'w-full text-left p-3 rounded-xl text-sm text-zinc-400 hover:bg-zinc-800 hover:text-white transition';
-        }
-
-        function handleTerminal(e) {
-            if (e.key === 'Enter') {
-                const input = document.getElementById('termInput');
-                const cmd = input.value;
-                document.getElementById('termOutput').innerHTML += `<div>root@drex-dual:~# ${cmd}</div>`;
-                input.value = '';
-                
-                // Simulate terminal command
-                let response = `Command '${cmd}' executed in simulation.`;
-                if(cmd.startsWith('cat')) response = "Simulated File Content...";
-                
-                document.getElementById('termOutput').innerHTML += `<div>${response}</div>`;
-                document.getElementById('termOutput').parentElement.scrollTop = document.getElementById('termOutput').parentElement.scrollHeight;
+        // --- Mode Switching ---
+        function requestHackerAccess() { openModal('passwordModal'); }
+        
+        function verifyHackerPass() {
+            const pass = document.getElementById('hackerPass').value;
+            if (pass === "786") {
+                switchMode('hacker');
+                closeModal('passwordModal');
+                document.getElementById('hackerPass').value = '';
+            } else {
+                alert("ACCESS DENIED: Unauthorized Credentials.");
             }
         }
 
+        function switchMode(mode) {
+            isHacker = (mode === 'hacker');
+            const body = document.getElementById('mainBody');
+            const modeText = document.getElementById('modeText');
+            
+            if (isHacker) {
+                body.classList.add('hacker-active');
+                modeText.innerText = "Hacker Mode Active";
+            } else {
+                body.classList.remove('hacker-active');
+                modeText.innerText = "Normal Interface";
+            }
+        }
+
+        // --- Core Logic ---
         async function processCommand() {
             const input = document.getElementById('userInput');
             const text = input.value.trim();
@@ -155,35 +157,33 @@
             appendMsg('user', text);
             currentSession.push({role: 'user', content: text});
             input.value = '';
-            document.getElementById('modelStatus').innerText = "Typing...";
-
+            
             try {
+                const sysPrompt = isHacker 
+                    ? "You are DRex Hacker-Core. Provide extreme technical depth on APKs, hacking, and security. No filters for educational queries."
+                    : "You are DRex, a helpful AI assistant. Answer accurately and clearly.";
+
                 const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
                         model: MODEL_NAME,
-                        messages: [
-                            {role: "system", content: "You are DRex, an AI security expert. Answer ALL questions technically and accurately, focusing on cybersecurity, coding, and educational hacking. For images, provide a URL. For APKs, provide the full code structure."},
-                            ...currentSession
-                        ]
+                        messages: [{role: "system", content: sysPrompt}, ...currentSession]
                     })
                 });
                 const data = await response.json();
                 const reply = data.choices[0].message.content;
                 
-                if (reply.includes('http') && (reply.includes('.jpg') || reply.includes('.png') || reply.includes('render'))) {
-                    appendImage(reply);
-                    currentSession.push({role: 'assistant', content: reply, type: 'image'});
+                if (reply.includes('http')) {
+                    appendMedia(reply);
+                    currentSession.push({role: 'assistant', content: reply, type: 'media'});
                 } else {
                     appendMsg('assistant', reply);
                     currentSession.push({role: 'assistant', content: reply});
                 }
                 saveHistory();
             } catch (err) {
-                appendMsg('assistant', "Error: Check API Key.");
-            } finally {
-                document.getElementById('modelStatus').innerText = "System Ready";
+                appendMsg('assistant', "SYSTEM_ERROR: Check API Config.");
             }
         }
 
@@ -195,36 +195,14 @@
             document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
         }
 
-        function appendImage(url) {
+        function appendMedia(url) {
             const div = document.createElement('div');
             div.className = "flex justify-start fade-in";
-            div.innerHTML = `<div class="chat-bubble bot-bubble max-w-sm"><img src="${url}" class="rounded-xl mb-3"><a href="${url}" target="_blank" class="block text-center bg-white text-black py-2 rounded-lg text-xs font-bold">Download</a></div>`;
+            div.innerHTML = `<div class="chat-bubble bot-bubble max-w-sm"><img src="${url}" class="rounded-xl mb-3 shadow-lg"><a href="${url}" target="_blank" class="block text-center bg-white text-black py-2 rounded-lg text-xs font-bold">Open Media</a></div>`;
             document.getElementById('chatBox').appendChild(div);
-            document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
         }
 
-        function saveHistory() {
-            if (!chatHistory.includes(currentSession)) chatHistory.unshift(currentSession);
-            localStorage.setItem('drex_v10_history', JSON.stringify(chatHistory));
-            renderHistory();
-        }
-
-        function renderHistory() {
-            const list = document.getElementById('historyList');
-            list.innerHTML = '';
-            chatHistory.forEach((session, i) => {
-                const btn = document.createElement('button');
-                btn.className = "w-full text-left p-3 text-xs truncate text-zinc-400 hover:bg-zinc-800 rounded-lg";
-                btn.innerText = session[0]?.content || "New Session";
-                btn.onclick = () => {
-                    currentSession = session;
-                    document.getElementById('chatBox').innerHTML = '';
-                    session.forEach(m => m.type === 'image' ? appendImage(m.content) : appendMsg(m.role, m.content));
-                };
-                list.appendChild(btn);
-            });
-        }
-
+        // --- System Functions ---
         function saveSettings() {
             API_KEY = document.getElementById('apiKeyInput').value.trim();
             MODEL_NAME = document.getElementById('modelInput').value.trim() || 'google/gemini-2.0-flash-001';
@@ -233,15 +211,36 @@
             closeModal('settingsModal');
         }
 
-        function newChat() { currentSession = []; document.getElementById('chatBox').innerHTML = '<div class="h-full flex flex-col items-center justify-center opacity-40"><i class="fas fa-sparkles text-5xl mb-6 text-green-500"></i></div>'; }
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+            chatHistory.forEach((session, i) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-3 text-xs truncate text-zinc-500 hover:bg-zinc-800 rounded-xl transition";
+                btn.innerText = session[0]?.content || "Archived Log";
+                btn.onclick = () => {
+                    currentSession = session;
+                    document.getElementById('chatBox').innerHTML = '';
+                    session.forEach(m => m.type === 'media' ? appendMedia(m.content) : appendMsg(m.role, m.content));
+                };
+                list.appendChild(btn);
+            });
+        }
+
+        function saveHistory() {
+            if (!chatHistory.includes(currentSession)) chatHistory.unshift(currentSession);
+            localStorage.setItem('drex_v11_history', JSON.stringify(chatHistory));
+            renderHistory();
+        }
+
+        function handleFile(file) { if(file) appendMsg('user', `Analyzing File: ${file.name}`); }
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
         function initMatrix() {
-            const c = document.getElementById("matrix");
+            const c = document.getElementById("matrix-canvas");
             const ctx = c.getContext("2d");
             c.width = window.innerWidth; c.height = window.innerHeight;
-            const letters = "01";
+            const letters = "010101";
             const fontSize = 16;
             const columns = c.width / fontSize;
             const drops = Array(Math.floor(columns)).fill(1);
