@@ -2,393 +2,145 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DRex | Zenith v36</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D-Rex AI</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        /* --- CSS STYLES --- */
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; height: 100vh; overflow: hidden; }
         
-        :root { --h: #00ff41; --n: #6366f1; --p: #ea580c; --bg: #020617; }
-        
-        body { background: var(--bg); color: #f3f4f6; font-family: 'Plus Jakarta Sans', sans-serif; height: 100dvh; display: flex; overflow: hidden; margin: 0; transition: background 0.5s ease; }
-        body.light-mode { --bg: #f8fafc; color: #0f172a; background: #f8fafc; }
-
-        /* HUD Glassmorphism */
-        .glass-hud { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,0.08); }
-        .light-mode .glass-hud { background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(0,0,0,0.1); }
-
-        /* Unified Chatbox Pill (As per Screenshot) */
-        .chatbox-pill {
-            background: rgba(23, 23, 23, 0.85);
-            border: 1px solid rgba(99, 102, 241, 0.4);
-            border-radius: 100px;
-            padding: 8px 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            width: 95%;
-            max-width: 850px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        /* Loading Effect */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; color: #00ff00;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 3em; font-family: 'Courier New', monospace;
+            z-index: 1000;
+            animation: hideLoader 2s forwards;
+            animation-delay: 1s;
         }
-        .chatbox-pill.drag-over { border-color: #00ff41; background: rgba(0, 255, 65, 0.1); transform: scale(1.02); }
+        @keyframes hideLoader { to { opacity: 0; visibility: hidden; } }
 
-        /* Sidebar & Navigation */
-        .sidebar { width: 340px; border-right: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; display: flex; flex-direction: column; z-index: 100; transition: transform 0.4s ease; }
-        @media (max-width: 1024px) { .sidebar { position: fixed; inset-y: 0; left: 0; transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } }
+        /* Container Layout */
+        .app-container { display: flex; height: 100vh; }
 
-        /* Bubbles & Interaction */
-        #chatBox { flex: 1; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; gap: 28px; }
-        .msg-container { position: relative; max-width: 80%; animation: bubblePop 0.4s ease-out; }
-        .msg-user { align-self: flex-end; }
-        .msg-bot { align-self: flex-start; }
-        .msg-bubble { padding: 20px 26px; border-radius: 30px; font-size: 0.95rem; line-height: 1.7; position: relative; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
-        .del-msg { position: absolute; top: -12px; right: -12px; background: #ef4444; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; opacity: 0; transition: 0.2s; color: white; border: 3px solid var(--bg); }
-        .msg-container:hover .del-msg { opacity: 1; }
+        /* Sidebar */
+        .sidebar { width: 250px; background: #1a1a1a; padding: 20px; display: flex; flex-direction: column; border-right: 2px solid #333; }
+        .logo { font-size: 28px; font-weight: bold; color: #00ff00; text-align: center; margin-bottom: 30px; text-transform: uppercase; }
+        .menu-btn {
+            background: none; border: 1px solid #555; color: white;
+            padding: 15px; margin-bottom: 10px; cursor: pointer;
+            text-align: left; transition: 0.3s; border-radius: 5px;
+        }
+        .menu-btn:hover { background: #333; }
 
-        @keyframes bubblePop { from { opacity: 0; transform: scale(0.9) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-
-        /* Voice Feedback Glows */
-        .speech-glow-on { background: #6366f1 !important; box-shadow: 0 0 25px #6366f1; color: white !important; }
-        .speech-glow-off { background: #ef4444 !important; box-shadow: 0 0 25px #ef4444; color: white !important; }
+        /* Chat Area */
+        .chat-area { flex-grow: 1; display: flex; flex-direction: column; background: #222; }
+        .chat-content { flex-grow: 1; padding: 20px; overflow-y: auto; color: white; }
         
-        /* Gemini-style Waveform */
-        .waveform { display: none; gap: 4px; height: 18px; align-items: center; }
-        .wave-active .waveform { display: flex; }
-        .bar { width: 3px; height: 8px; background: #6366f1; border-radius: 3px; animation: bounce 0.8s infinite ease-in-out; }
-        @keyframes bounce { 0%, 100% { height: 5px; } 50% { height: 18px; } }
+        /* Hacker Preview Panel */
+        .hacker-panel { display: none; padding: 20px; border-top: 2px solid #00ff00; background: #000; }
+        .code-block { background: #111; color: #00ff00; padding: 15px; height: 150px; overflow-y: auto; font-family: monospace; border: 1px solid #333; }
+        .preview-block { background: white; color: black; padding: 15px; height: 100px; margin-top: 10px; }
 
-        /* Fingerprint Lock Animation */
-        .fingerprint-id { width: 110px; height: 110px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; background: rgba(0,0,0,0.5); }
-        .pulsing-ring { position: absolute; inset: -15px; border: 3px solid #6366f1; border-radius: 50%; animation: pulseRing 1.5s infinite; }
-        @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.2); opacity: 0; } }
+        /* Input Area */
+        .input-area { display: flex; padding: 15px; background: #1a1a1a; border-top: 1px solid #333; }
+        textarea {
+            flex-grow: 1; resize: none; height: 50px;
+            background: #333; color: white; border: none;
+            padding: 10px; border-radius: 5px; outline: none;
+        }
+        .send-btn {
+            background: #007bff; color: white; border: none;
+            padding: 0 20px; margin-left: 10px; cursor: pointer;
+            border-radius: 5px; font-weight: bold;
+        }
 
-        /* Matrix Rain Background */
-        #matrix { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: 2s; }
-        body.hacker-active #matrix { opacity: 0.4; }
-
-        /* Indicators */
-        .typing-dot { width: 6px; height: 6px; background: #6366f1; border-radius: 50%; animation: dotFlash 1.4s infinite linear; }
-        @keyframes dotFlash { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+        /* Mode Specific Styles */
+        body.normal-mode { background: #f4f4f4; color: #333; }
+        body.hacker-mode { background: #000; color: #00ff00; }
+        body.premium-mode { background: #1a1a1a; }
+        body.premium-mode .chat-content { background: linear-gradient(135deg, #2b5876 0%, #4e4376 100%); }
     </style>
 </head>
-<body id="mainBody">
-    <canvas id="matrix"></canvas>
+<body>
 
-    <aside id="sidebar" class="sidebar glass-hud">
-        <div class="p-8 border-b border-white/5 flex justify-between items-center">
-            <h1 class="text-2xl font-black tracking-tighter uppercase">DRX<span id="brandTag" class="text-indigo-500">_ZENITH</span></h1>
-            <div class="flex gap-4 items-center">
-                <button onclick="toggleLightMode()" id="themeBtn" class="text-zinc-500 hover:text-white transition"><i class="fas fa-sun-bright"></i></button>
-                <div class="relative cursor-pointer">
-                    <i class="fas fa-bell text-zinc-500"></i>
-                    <span id="unreadNotif" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-900"></span>
-                </div>
-            </div>
-        </div>
+    <div id="loader">D-REX AI LOADING...</div>
 
-        <div class="p-6 flex-1 flex flex-col gap-6 overflow-hidden">
-            <div class="bg-black/40 p-1.5 rounded-2xl grid grid-cols-3 gap-1 border border-white/10">
-                <button onclick="switchMode('normal')" id="tabNormal" class="py-3 text-[10px] font-black uppercase rounded-xl transition-all">Normal</button>
-                <button onclick="reqAccess('hacker')" id="tabHacker" class="py-3 text-[10px] font-black uppercase rounded-xl transition-all">Hacker</button>
-                <button onclick="reqAccess('premiere')" id="tabPremiere" class="py-3 text-[10px] font-black uppercase rounded-xl transition-all">Premiere</button>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">D-Rex AI</div>
+            <button class="menu-btn" onclick="setMode('normal')">Normal Mode</button>
+            <button class="menu-btn" onclick="setMode('hacker')">Hacker Mode</button>
+            <button class="menu-btn" onclick="setMode('premium')">Premium Mode</button>
+        </aside>
+
+        <section class="chat-area">
+            <div class="chat-content" id="chatWindow">
+                <p>Welcome to D-Rex AI. Select a mode to begin.</p>
             </div>
 
-            <div class="relative">
-                <i class="fas fa-search absolute left-4 top-4 text-zinc-600"></i>
-                <input type="text" oninput="filterHistory(this.value)" class="w-full bg-black/20 border border-white/10 p-4 pl-12 rounded-2xl text-xs outline-none focus:border-indigo-500" placeholder="Filter Neural Logs...">
+            <div class="hacker-panel" id="hackerPanel">
+                <div class="code-block" id="codeOutput">AI Generated Code...</div>
+                <div class="preview-block" id="previewOutput">Web/App Preview...</div>
+                <button onclick="downloadZip()">Download ZIP</button>
             </div>
 
-            <div id="historyList" class="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-hide"></div>
-        </div>
-
-        <div class="p-6 border-t border-white/5">
-            <button onclick="openModal('cfgModal')" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-indigo-500 transition">System Settings</button>
-        </div>
-    </aside>
-
-    <main class="flex-1 flex flex-col relative min-w-0">
-        <header class="h-20 flex items-center justify-between px-10 glass-hud border-b border-white/5">
-            <button onclick="toggleSidebar()" class="lg:hidden text-white"><i class="fas fa-bars-staggered"></i></button>
-            
-            <div class="flex items-center gap-4">
-                <div class="waveform" id="waveform">
-                    <div class="bar" style="animation-delay: 0s"></div>
-                    <div class="bar" style="animation-delay: 0.1s"></div>
-                    <div class="bar" style="animation-delay: 0.2s"></div>
-                    <div class="bar" style="animation-delay: 0.3s"></div>
-                </div>
-                <span class="text-[10px] font-black uppercase tracking-[0.6em] text-zinc-500" id="statusLine">System Ready</span>
+            <div class="input-area">
+                <textarea id="userInput" placeholder="Type your command here..."></textarea>
+                <button class="send-btn" onclick="sendMessage()">Send</button>
             </div>
-
-            <button onclick="toggleSpeech()" id="speechFeedbackBtn" class="w-12 h-12 rounded-2xl speech-glow-off transition-all">
-                <i class="fas fa-volume-high"></i>
-            </button>
-        </header>
-
-        <div id="chatBox"></div>
-        
-        <div id="typingIndicator" class="hidden px-10 mb-4 flex items-center gap-2">
-            <div class="typing-dot" style="animation-delay: 0s"></div>
-            <div class="typing-dot" style="animation-delay: 0.2s"></div>
-            <div class="typing-dot" style="animation-delay: 0.4s"></div>
-            <span class="text-[10px] text-indigo-400 font-bold uppercase ml-2">DRX Synthesizing...</span>
-        </div>
-
-        <div id="toolsMenu" class="hidden absolute bottom-28 left-10 bg-zinc-900 border border-indigo-500/20 p-3 rounded-3xl flex flex-col gap-1 shadow-3xl z-50 w-64 animate-in slide-in-from-bottom-5">
-            <button class="p-3.5 text-xs text-left hover:bg-white/5 rounded-2xl transition" onclick="tool('Deep Research')"><i class="fas fa-search-plus mr-3 text-blue-400"></i> Deep Research</button>
-            <button class="p-3.5 text-xs text-left hover:bg-white/5 rounded-2xl transition" onclick="tool('Create Images')"><i class="fas fa-image mr-3 text-purple-400"></i> Create Images</button>
-            <button class="p-3.5 text-xs text-left hover:bg-white/5 rounded-2xl transition" onclick="tool('Canvas')"><i class="fas fa-pen-nib mr-3 text-green-400"></i> Canvas</button>
-            <button class="p-3.5 text-xs text-left hover:bg-white/5 rounded-2xl transition" onclick="tool('Guided Learning')"><i class="fas fa-book mr-3 text-orange-400"></i> Guided Learning</button>
-        </div>
-
-        <footer class="p-10 flex justify-center">
-            <div id="dropZone" class="chatbox-pill">
-                <button onclick="toggleTools()" class="w-11 h-11 rounded-full bg-white/5 text-zinc-400 hover:text-indigo-400 transition"><i class="fas fa-plus"></i></button>
-                <textarea id="userInput" rows="1" class="flex-1 bg-transparent p-2 text-sm outline-none resize-none text-white placeholder-zinc-500" placeholder="Speak or type command..." oninput="autoGrow(this)"></textarea>
-                <button onclick="startVoiceInput()" id="micBtn" class="w-10 h-10 rounded-full text-zinc-400 hover:text-indigo-400 transition"><i class="fas fa-microphone"></i></button>
-                <button onclick="sendMessage()" class="w-11 h-11 rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 active:scale-90 transition"><i class="fas fa-arrow-up"></i></button>
-            </div>
-        </footer>
-    </main>
-
-    <div id="lockModal" class="fixed inset-0 bg-black/95 z-[200] hidden items-center justify-center backdrop-blur-3xl">
-        <div class="glass-hud p-12 rounded-[4rem] max-w-sm w-full text-center border-indigo-500/40">
-            <div class="fingerprint-id mx-auto mb-10">
-                <div class="pulsing-ring"></div>
-                <i class="fas fa-fingerprint text-5xl text-indigo-500"></i>
-            </div>
-            <h2 id="lockTitle" class="text-[10px] font-black mb-10 uppercase tracking-[0.7em] text-zinc-400">Biometric Verification</h2>
-            <input type="password" id="lockPass" class="w-full bg-black/40 border border-white/10 p-6 rounded-3xl text-center text-white outline-none mb-10 text-3xl tracking-[0.5em] font-mono" placeholder="••••">
-            <button onclick="unlock()" class="w-full bg-indigo-600 text-white py-5 rounded-3xl font-black text-xs uppercase tracking-widest shadow-2xl transition hover:scale-105">Verify Identity</button>
-        </div>
-    </div>
-
-    <div id="cfgModal" class="fixed inset-0 bg-black/90 z-[200] hidden items-center justify-center">
-        <div class="glass-hud p-10 rounded-[3rem] max-w-sm w-full">
-            <h2 class="text-xs font-black mb-8 uppercase tracking-widest text-white">Neural Uplink Config</h2>
-            <input type="password" id="apiKey" class="w-full bg-black border border-white/10 rounded-2xl p-5 text-white text-xs mb-8 outline-none focus:border-indigo-500" placeholder="OpenRouter API Key">
-            <button onclick="saveConfig()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-xs uppercase shadow-xl">Connect System</button>
-            <button onclick="closeModal('cfgModal')" class="w-full mt-4 text-[10px] text-zinc-500 font-bold uppercase">Back</button>
-        </div>
+        </section>
     </div>
 
     <script>
-        let API_KEY = localStorage.getItem('drx36_key') || '';
+        // --- JAVASCRIPT LOGIC ---
         let currentMode = 'normal';
-        let pendingMode = '';
-        let speechActive = false;
-        let isLight = false;
-        let dbs = {
-            normal: JSON.parse(localStorage.getItem('ZD_N')) || [],
-            hacker: JSON.parse(localStorage.getItem('ZD_H')) || [],
-            premiere: JSON.parse(localStorage.getItem('ZD_P')) || []
-        };
-        let activeChat = [];
 
-        window.onload = () => { initMatrix(); switchMode('normal'); document.getElementById('apiKey').value = API_KEY; initDragDrop(); };
-
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function toggleTools() { document.getElementById('toolsMenu').classList.toggle('hidden'); }
-
-        function toggleLightMode() {
-            if(currentMode !== 'normal') return;
-            isLight = !isLight;
-            document.body.classList.toggle('light-mode', isLight);
-        }
-
-        function reqAccess(mode) {
-            if(currentMode === mode) return;
-            pendingMode = mode;
-            document.getElementById('lockTitle').innerText = mode.toUpperCase() + " PROTOCOL LOCK";
-            openModal('lockModal');
-        }
-
-        function unlock() {
-            const pin = document.getElementById('lockPass').value;
-            const target = pendingMode === 'hacker' ? 'drex786' : 'DRex';
-            if(pin === target) { switchMode(pendingMode); closeModal('lockModal'); }
-            else { alert("IDENTITY REJECTED: UNAUTHORIZED USER"); }
-            document.getElementById('lockPass').value = '';
-        }
-
-        function switchMode(mode) {
-            currentMode = mode; activeChat = [];
-            document.getElementById('chatBox').innerHTML = '';
-            document.body.classList.remove('hacker-active', 'light-mode');
+        function setMode(mode) {
+            currentMode = mode;
+            document.body.className = mode + '-mode';
+            document.getElementById('chatWindow').innerHTML = `<p>Mode set to: <strong>${mode.toUpperCase()}</strong></p>`;
             
-            if(mode === 'hacker') {
-                document.body.classList.add('hacker-active');
-                document.getElementById('brandTag').className = "text-green-500";
-            } else if(mode === 'premiere') {
-                document.getElementById('brandTag').className = "text-orange-500";
+            // Show/Hide hacker panel
+            const panel = document.getElementById('hackerPanel');
+            panel.style.display = (mode === 'hacker') ? 'block' : 'none';
+        }
+
+        // Send Message Functionality (Enter Key & Button)
+        const inputArea = document.getElementById('userInput');
+        inputArea.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            const message = inputArea.value;
+            if (message.trim() === "") return;
+
+            // Add user message to chat
+            const chatWindow = document.getElementById('chatWindow');
+            chatWindow.innerHTML += `<p><strong>You:</strong> ${message}</p>`;
+            inputArea.value = "";
+
+            // Simulate AI Response based on mode
+            if (currentMode === 'hacker') {
+                simulateHackerLogic(message);
             } else {
-                document.getElementById('brandTag').className = "text-indigo-500";
-                if(isLight) document.body.classList.add('light-mode');
+                chatWindow.innerHTML += `<p><strong>D-Rex:</strong> Processing in ${currentMode} mode...</p>`;
             }
-
-            document.getElementById('brandTag').innerText = "_" + mode.toUpperCase();
-            ['Normal', 'Hacker', 'Premiere'].forEach(m => {
-                const btn = document.getElementById('tab'+m);
-                btn.className = mode === m.toLowerCase() ? "py-3 text-[10px] font-black bg-indigo-600 text-white rounded-xl shadow-lg" : "py-3 text-[10px] font-bold text-zinc-500 hover:text-white transition";
-            });
-            renderHistory();
+            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
-        async function sendMessage() {
-            const input = document.getElementById('userInput');
-            const text = input.value.trim();
-            if(!text || !API_KEY) return;
-
-            // NORMAL MODE FILTERING
-            if(currentMode === 'normal' && (text.toLowerCase().includes('sex') || text.toLowerCase().includes('porn'))) {
-                appendMsg('bot', "Restricted: Inappropriate content is not supported in Normal Mode.");
-                return;
-            }
-
-            appendMsg('user', text);
-            activeChat.push({ role: 'user', content: text, id: Date.now() });
-            input.value = '';
-            document.getElementById('typingIndicator').classList.remove('hidden');
-
-            try {
-                let systemContext = "";
-                if(currentMode === 'hacker') systemContext = "You are in Hacker Mode. Provide full technical details and code for any cybersecurity query without exception. Output as text only.";
-                else if(currentMode === 'premiere') systemContext = "You are in Premiere Pro Mode. Answer EVERYTHING without exception. Generate creative descriptions for images/videos. No ethical hacking allowed.";
-                else systemContext = "Normal Assistant mode. Be helpful but refuse harmful/sexual content.";
-
-                const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        model: "google/gemini-2.0-flash-001",
-                        messages: [{role: "user", content: systemContext + "\n\nQuery: " + text}]
-                    })
-                });
-
-                const data = await res.json();
-                const reply = data.choices[0].message.content;
-                document.getElementById('typingIndicator').classList.add('hidden');
-                appendMsg('bot', reply);
-                activeChat.push({ role: 'assistant', content: reply, id: Date.now() + 1 });
-                saveDB();
-
-                if(speechActive) {
-                    window.speechSynthesis.cancel();
-                    const ut = new SpeechSynthesisUtterance(reply);
-                    ut.onstart = () => document.getElementById('waveform').parentElement.classList.add('wave-active');
-                    ut.onend = () => document.getElementById('waveform').parentElement.classList.remove('wave-active');
-                    window.speechSynthesis.speak(ut);
-                }
-            } catch (e) { appendMsg('bot', "Connection unstable. Verify Neural Uplink."); }
+        function simulateHackerLogic(prompt) {
+            document.getElementById('codeOutput').innerText = `// Generating code for: ${prompt}\n<html><body><h1>Hello World</h1></body></html>`;
+            document.getElementById('previewOutput').innerText = `Preview: A simple webpage for '${prompt}'`;
         }
 
-        function appendMsg(role, text, id = Date.now()) {
-            const div = document.createElement('div');
-            div.className = `msg-container ${role === 'user' ? 'msg-user' : 'msg-bot'}`;
-            div.id = "m-" + id;
-            
-            let bubbleStyle = role === 'user' ? "bg-indigo-600 text-white" : (currentMode === 'hacker' ? "bg-black/80 text-green-400 border-green-500/30" : "bg-white/5");
-
-            div.innerHTML = `
-                <div class="msg-bubble ${bubbleStyle}">
-                    <div class="del-msg" onclick="deleteMsg('${id}')"><i class="fas fa-times"></i></div>
-                    <div class="text-rendering-mode whitespace-pre-wrap">${text}</div>
-                </div>
-            `;
-            document.getElementById('chatBox').appendChild(div);
-            document.getElementById('chatBox').scrollTo({ top: document.getElementById('chatBox').scrollHeight, behavior: 'smooth' });
-        }
-
-        function deleteMsg(id) {
-            document.getElementById('m-'+id).remove();
-            activeChat = activeChat.filter(m => m.id != id);
-            saveDB();
-        }
-
-        function saveDB() {
-            const session = { id: Date.now(), data: [...activeChat] };
-            dbs[currentMode].unshift(session);
-            localStorage.setItem('ZD_' + currentMode.toUpperCase()[0], JSON.stringify(dbs[currentMode]));
-            renderHistory();
-        }
-
-        function renderHistory(filter = '') {
-            const list = document.getElementById('historyList');
-            list.innerHTML = '';
-            dbs[currentMode].forEach((s, idx) => {
-                if(!s.data[0].content.toLowerCase().includes(filter.toLowerCase())) return;
-                const div = document.createElement('div');
-                div.className = "group flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-indigo-600/10 transition cursor-pointer";
-                div.innerHTML = `
-                    <span class="text-[11px] truncate flex-1 font-bold" onclick="loadSession(${idx})">${s.data[0].content}</span>
-                    <button onclick="deleteHistory(${idx})" class="opacity-0 group-hover:opacity-100 text-red-500 transition"><i class="fas fa-trash-can"></i></button>
-                `;
-                list.appendChild(div);
-            });
-        }
-
-        function filterHistory(v) { renderHistory(v); }
-        function loadSession(idx) {
-            activeChat = dbs[currentMode][idx].data;
-            document.getElementById('chatBox').innerHTML = '';
-            activeChat.forEach(m => appendMsg(m.role, m.content, m.id));
-            if(window.innerWidth < 1024) toggleSidebar();
-        }
-
-        function deleteHistory(idx) {
-            dbs[currentMode].splice(idx, 1);
-            localStorage.setItem('ZD_' + currentMode.toUpperCase()[0], JSON.stringify(dbs[currentMode]));
-            renderHistory();
-        }
-
-        function toggleSpeech() {
-            speechActive = !speechActive;
-            const btn = document.getElementById('speechFeedbackBtn');
-            btn.className = speechActive ? "w-12 h-12 rounded-2xl speech-glow-on transition-all" : "w-12 h-12 rounded-2xl speech-glow-off transition-all";
-            if(!speechActive) window.speechSynthesis.cancel();
-        }
-
-        function startVoiceInput() {
-            const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            rec.onstart = () => { document.getElementById('micBtn').className = "w-10 h-10 rounded-full text-red-500 animate-pulse"; };
-            rec.onresult = (e) => { 
-                document.getElementById('userInput').value = e.results[0][0].transcript; 
-                document.getElementById('micBtn').className = "w-10 h-10 rounded-full text-zinc-400 hover:text-indigo-400";
-            };
-            rec.start();
-        }
-
-        function initDragDrop() {
-            const dz = document.getElementById('dropZone');
-            dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('drag-over'); });
-            dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-            dz.addEventListener('drop', (e) => {
-                e.preventDefault(); dz.classList.remove('drag-over');
-                document.getElementById('userInput').value += ` [Neural Upload: ${e.dataTransfer.files[0].name}] `;
-            });
-        }
-
-        function tool(n) { alert(n + " Protocol Initiated."); toggleTools(); }
-        function saveConfig() { API_KEY = document.getElementById('apiKey').value; localStorage.setItem('drx36_key', API_KEY); closeModal('cfgModal'); }
-        function autoGrow(o) { o.style.height = "auto"; o.style.height = o.scrollHeight + "px"; }
-
-        function initMatrix() {
-            const c = document.getElementById("matrix"); const ctx = c.getContext("2d");
-            c.width = window.innerWidth; c.height = window.innerHeight;
-            const drops = Array(Math.floor(c.width / 20)).fill(1);
-            setInterval(() => {
-                ctx.fillStyle = "rgba(0,0,0,0.05)"; ctx.fillRect(0,0,c.width,c.height);
-                ctx.fillStyle = "#0F0"; ctx.font = "15px monospace";
-                drops.forEach((y, i) => {
-                    ctx.fillText(Math.floor(Math.random()*2), i*20, y*20);
-                    if(y*20 > c.height && Math.random() > 0.975) drops[i] = 0;
-                    drops[i]++;
-                });
-            }, 50);
+        function downloadZip() {
+            alert("Downloading files as a single ZIP folder...");
+            // Backend integration needed here
         }
     </script>
 </body>
