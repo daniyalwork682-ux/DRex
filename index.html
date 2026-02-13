@@ -22,7 +22,34 @@
 
         /* Mode Aesthetics */
         .hacker-ui { background: #000 !important; color: var(--h) !important; }
-        .premiere-ui { background: radial-gradient(circle at top right, #431407, #020617); }
+        /* ... existing styles ... */
+/* Add these for the new preview feature */
+.preview-chip {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(99, 102, 241, 0.5);
+    margin-left: 15px; /* Aligns with text */
+}
+.preview-chip img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.remove-img {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    font-size: 10px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 10;
+}
 
         /* Gemini Waveform Animation */
         .wave-container { display: none; align-items: center; gap: 3px; height: 20px; }
@@ -122,14 +149,19 @@
             <button class="p-3 text-xs text-left hover:bg-white/5 rounded-xl transition" onclick="tool('Guided Learning')"><i class="fas fa-book-open mr-3 text-yellow-400"></i> Guided Learning</button>
         </div>
 
-        <footer class="p-4 lg:p-6">
-            <div id="dropZone" class="max-w-5xl mx-auto bg-zinc-900/80 border border-white/10 rounded-[2rem] p-2 flex items-end gap-2 drop-zone">
-                <button onclick="toggleTools()" class="w-12 h-12 rounded-2xl bg-white/5 text-zinc-400 hover:text-white"><i class="fas fa-plus"></i></button>
-                <textarea id="userInput" rows="1" class="flex-1 bg-transparent p-3.5 text-sm outline-none resize-none text-white" placeholder="Speak or type command..." oninput="autoGrow(this)"></textarea>
-                <button onclick="startVoiceInput()" id="voiceInputBtn" class="w-12 h-12 rounded-2xl bg-white/5 text-indigo-400 hover:bg-indigo-500 hover:text-white transition"><i class="fas fa-microphone"></i></button>
-                <button onclick="sendMessage()" class="w-12 h-12 rounded-2xl bg-indigo-600 text-white shadow-lg active:scale-95 transition"><i class="fas fa-arrow-up"></i></button>
-            </div>
-        </footer>
+       <footer class="p-4 lg:p-6">
+    <div id="dropZone" class="max-w-5xl mx-auto bg-zinc-900/80 border border-white/10 rounded-[2rem] p-2 flex flex-col gap-2 drop-zone">
+        <div id="imagePreview" class="hidden flex flex-wrap gap-2 px-4 pt-2"></div>
+        
+        <div class="flex items-end gap-2 w-full">
+            <button onclick="toggleTools()" class="w-12 h-12 rounded-2xl bg-white/5 text-zinc-400 hover:text-white shrink-0"><i class="fas fa-plus"></i></button>
+            <textarea id="userInput" rows="1" class="flex-1 bg-transparent p-3.5 text-sm outline-none resize-none text-white" placeholder="Speak or type command..." oninput="autoGrow(this)"></textarea>
+            <button onclick="startVoiceInput()" id="voiceInputBtn" class="w-12 h-12 rounded-2xl bg-white/5 text-indigo-400 shrink-0"><i class="fas fa-microphone"></i></button>
+            <button onclick="sendMessage()" class="w-12 h-12 rounded-2xl bg-indigo-600 text-white shrink-0"><i class="fas fa-arrow-up"></i></button>
+        </div>
+    </div>
+</footer>
+        
     </main>
 
     <div id="lockModal" class="modal">
@@ -346,16 +378,47 @@
             rec.start();
         }
 
-        function initDragDrop() {
-            const dz = document.getElementById('dropZone');
-            dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('drag-over'); });
-            dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-            dz.addEventListener('drop', (e) => {
-                e.preventDefault(); dz.classList.remove('drag-over');
-                const file = e.dataTransfer.files[0];
-                document.getElementById('userInput').value += ` [File Uploaded: ${file.name}] `;
-            });
+        // ... existing script functions ...
+
+function initDragDrop() {
+    const dz = document.getElementById('dropZone');
+    const preview = document.getElementById('imagePreview');
+
+    dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+    
+    dz.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dz.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                preview.classList.remove('hidden');
+                // Create visual chip
+                preview.innerHTML = `
+                    <div class="preview-chip">
+                        <img src="${event.target.result}">
+                        <div class="remove-img" onclick="clearPreview()">×</div>
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+            // Store file data to send later
+            window.pendingFile = file; 
         }
+    });
+}
+
+function clearPreview() {
+    const preview = document.getElementById('imagePreview');
+    preview.innerHTML = '';
+    preview.classList.add('hidden');
+    window.pendingFile = null; // Clear stored file
+}
+
+// ... existing script functions ...
 
         function tool(n) { alert(n + " protocol initiated."); toggleTools(); }
         function saveConfig() { API_KEY = document.getElementById('apiKey').value; localStorage.setItem('drx33_key', API_KEY); closeModal('cfgModal'); }
