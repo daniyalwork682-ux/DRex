@@ -3,155 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DRex | Omni-Quantum v33</title>
+    <title>DRex | Omni-Protocol v33</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
         
-        :root { --h: #00ff41; --n: #6366f1; --p: #f59e0b; --bg: #030712; }
+        :root { --h: #00ff41; --n: #6366f1; --p: #ea580c; --bg: #020617; }
         
         body { background: var(--bg); color: #f3f4f6; font-family: 'Plus Jakarta Sans', sans-serif; height: 100dvh; display: flex; overflow: hidden; margin: 0; transition: background 0.5s ease; }
         .hacker-font { font-family: 'Fira Code', monospace; }
 
-        /* Mode Variations */
-        body.normal-ui { background: radial-gradient(circle at top right, #1e1b4b, #030712); }
-        body.hacker-active { background: #000 !important; }
-        body.premiere-ui { background: radial-gradient(circle at top right, #451a03, #030712); }
+        /* Light Mode for Normal */
+        body.light-mode { background: #f8fafc; color: #0f172a; --bg: #f8fafc; }
+        .light-mode .sidebar { background: #ffffff; border-right: 1px solid #e2e8f0; }
+        .light-mode .msg-bot { background: #f1f5f9; border: 1px solid #e2e8f0; color: #1e293b; }
+        .light-mode .msg-user { background: #6366f1; color: white; }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        /* Mode Aesthetics */
+        .hacker-ui { background: #000 !important; color: var(--h) !important; }
+        .premiere-ui { background: radial-gradient(circle at top right, #431407, #020617); }
 
-        /* Sidebar & Layout */
-        .sidebar { width: 320px; background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(20px); border-right: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; display: flex; flex-direction: column; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 100; }
-        .main-engine { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
+        /* Gemini Waveform Animation */
+        .wave-container { display: none; align-items: center; gap: 3px; height: 20px; }
+        .wave-active .wave-container { display: flex; }
+        .bar { width: 3px; height: 5px; background: currentColor; border-radius: 3px; animation: wave 1s infinite ease-in-out; }
+        @keyframes wave { 0%, 100% { height: 5px; } 50% { height: 20px; } }
 
-        @media (max-width: 768px) {
-            .sidebar { position: fixed; inset-y: 0; left: 0; transform: translateX(-100%); width: 85%; }
-            .sidebar.open { transform: translateX(0); }
-        }
+        /* Sidebar & Responsive */
+        .sidebar { width: 320px; background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(20px); border-right: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; display: flex; flex-direction: column; transition: transform 0.4s ease; z-index: 100; }
+        @media (max-width: 1024px) { .sidebar { position: fixed; inset-y: 0; left: 0; transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } }
 
-        /* Message Bubbles */
-        #chatBox { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
-        .msg-container { position: relative; max-width: 85%; display: flex; flex-direction: column; }
+        /* Messaging */
+        #chatBox { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+        .msg-container { position: relative; max-width: 85%; transition: 0.3s; }
         .msg-user { align-self: flex-end; }
         .msg-bot { align-self: flex-start; }
-        .msg-bubble { padding: 15px 18px; border-radius: 22px; font-size: 0.95rem; line-height: 1.6; position: relative; transition: all 0.3s; border: 1px solid rgba(255,255,255,0.05); }
-        .del-msg { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; items-center; justify-content: center; font-size: 10px; cursor: pointer; opacity: 0; z-index: 10; }
+        .msg-bubble { padding: 14px 18px; border-radius: 20px; position: relative; font-size: 0.95rem; border: 1px solid rgba(255,255,255,0.05); }
+        .del-msg { position: absolute; top: -5px; right: -5px; background: #ef4444; width: 20px; height: 20px; border-radius: 50%; display: flex; items-center justify-center; font-size: 10px; cursor: pointer; opacity: 0; transition: 0.2s; color: white; }
         .msg-container:hover .del-msg { opacity: 1; }
 
-        /* Animations */
-        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(1.3); opacity: 0; } }
-        .pulse-ring { position: absolute; border: 2px solid var(--h); border-radius: 50%; animation: pulse-ring 2s infinite; }
-        
-        .typing-dot { width: 6px; height: 6px; background: currentColor; border-radius: 50%; animation: typing 1.4s infinite ease-in-out; }
-        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
-
-        /* Tools Menu */
-        .tools-card { position: absolute; bottom: 100px; left: 20px; background: #0f172a; border: 1px solid #334155; border-radius: 24px; padding: 12px; display: none; flex-direction: column; gap: 4px; z-index: 150; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .tools-card.active { display: flex; animation: slideUp 0.3s ease; }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        /* Typing Indicator */
+        .typing { display: none; padding: 10px; font-size: 10px; color: #6366f1; font-weight: bold; }
+        .typing.active { display: block; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 
         /* Drop Zone */
         .drop-zone { border: 2px dashed transparent; transition: 0.3s; }
-        .drop-zone.dragover { border-color: var(--n); background: rgba(99, 102, 241, 0.05); }
+        .drop-zone.drag-over { border-color: #6366f1; background: rgba(99, 102, 241, 0.1); }
+
+        /* Matrix Canvas */
+        #matrix { position: fixed; inset: 0; z-index: -1; opacity: 0; pointer-events: none; transition: 1s; }
+        body.hacker-active #matrix { opacity: 0.25; }
+
+        /* Modals */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .modal.active { display: flex; }
     </style>
 </head>
-<body id="mainBody" class="normal-ui">
-    <canvas id="matrix" style="position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:0; transition:2s;"></canvas>
+<body id="mainBody">
+    <canvas id="matrix"></canvas>
 
     <aside id="sidebar" class="sidebar">
-        <div class="p-8 border-b border-white/5 flex justify-between items-center">
-            <h1 class="text-xl font-black hacker-font tracking-tighter">DRX<span id="brandTag" class="text-indigo-500">_V33</span></h1>
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h1 class="text-xl font-black hacker-font uppercase">DRX<span id="brandTag">_OMNI</span></h1>
+            <div class="flex gap-2">
+                <button onclick="toggleLightMode()" id="lightToggle" class="text-zinc-400"><i class="fas fa-sun"></i></button>
+                <button class="relative text-zinc-400"><i class="fas fa-bell"></i><span id="notif" class="hidden absolute -top-1 -right-1 bg-red-500 w-2 h-2 rounded-full"></span></button>
+            </div>
+        </div>
+
+        <div class="p-4 flex flex-col gap-4 flex-1 overflow-hidden">
+            <div class="bg-black/40 p-1 rounded-xl grid grid-cols-3 gap-1 border border-white/5">
+                <button onclick="switchMode('normal')" id="tabNormal" class="py-2 text-[9px] font-bold uppercase rounded-lg">Normal</button>
+                <button onclick="reqAccess('hacker')" id="tabHacker" class="py-2 text-[9px] font-bold uppercase rounded-lg">Hacker</button>
+                <button onclick="reqAccess('premiere')" id="tabPremiere" class="py-2 text-[9px] font-bold uppercase rounded-lg">Premiere</button>
+            </div>
+
             <div class="relative">
-                <i class="fas fa-bell text-zinc-500 text-lg"></i>
-                <span id="notifBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-[8px] w-4 h-4 rounded-full flex items-center justify-center">0</span>
+                <i class="fas fa-search absolute left-3 top-3 text-zinc-500 text-xs"></i>
+                <input type="text" oninput="filterHistory(this.value)" class="w-full bg-black/40 border border-white/5 p-2.5 pl-9 rounded-xl text-xs outline-none focus:border-indigo-500" placeholder="Search history...">
             </div>
+
+            <div id="historyList" class="flex-1 overflow-y-auto space-y-2 pr-2"></div>
         </div>
 
-        <div class="p-5 flex-1 flex flex-col gap-6 overflow-hidden">
-            <div class="bg-black/40 p-1.5 rounded-2xl border border-white/10 grid grid-cols-3 gap-1">
-                <button onclick="switchMode('normal')" id="tabnormal" class="py-2.5 rounded-xl text-[9px] font-black uppercase transition-all">Normal</button>
-                <button onclick="triggerAuth('hacker')" id="tabhacker" class="py-2.5 rounded-xl text-[9px] font-black uppercase transition-all">Hacker</button>
-                <button onclick="triggerAuth('premiere')" id="tabpremiere" class="py-2.5 rounded-xl text-[9px] font-black uppercase transition-all">Premiere</button>
-            </div>
-
-            <div class="relative px-2">
-                <i class="fas fa-search absolute left-5 top-3 text-zinc-600 text-xs"></i>
-                <input type="text" id="histSearch" oninput="filterHistory()" class="w-full bg-black/40 border border-white/5 rounded-xl py-2.5 pl-10 pr-4 text-[10px] outline-none focus:border-white/20" placeholder="Search logs...">
-            </div>
-            
-            <div class="flex-1 flex flex-col gap-3 overflow-hidden">
-                <div id="historyList" class="flex-1 overflow-y-auto space-y-2 pr-2"></div>
-            </div>
-        </div>
-
-        <div class="p-6 border-t border-white/5">
-            <button onclick="openModal('cfgModal')" class="w-full bg-white text-black py-4 rounded-2xl font-black text-xs uppercase hover:bg-zinc-200 transition-all">Settings</button>
+        <div class="p-4 border-t border-white/5">
+            <button onclick="openModal('cfgModal')" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest">Settings</button>
         </div>
     </aside>
 
     <main class="main-engine">
-        <header class="h-20 border-b border-white/5 flex items-center justify-between px-6 bg-black/20 backdrop-blur-xl">
-            <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="md:hidden text-white bg-white/5 w-10 h-10 rounded-lg"><i class="fas fa-bars-staggered"></i></button>
-                <span id="modeDisplay" class="text-[10px] font-black tracking-widest text-zinc-500 uppercase">Awaiting_Input</span>
-            </div>
+        <header class="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-black/5 backdrop-blur-md">
+            <button onclick="toggleSidebar()" class="lg:hidden text-white"><i class="fas fa-bars-staggered"></i></button>
             
-            <div class="flex items-center gap-3">
-                <button id="voiceBtn" onclick="toggleSTT()" class="w-11 h-11 rounded-xl bg-white/5 text-zinc-400 hover:text-white transition-all">
-                    <i class="fas fa-microphone"></i>
-                </button>
-                <button id="speakerBtn" onclick="toggleTTS()" class="w-11 h-11 rounded-xl bg-indigo-500 text-white shadow-lg transition-all">
-                    <i class="fas fa-volume-high"></i>
-                </button>
+            <div id="voiceDisplay" class="flex items-center gap-3">
+                <div class="wave-container" id="waveform">
+                    <div class="bar" style="animation-delay: 0s"></div>
+                    <div class="bar" style="animation-delay: 0.2s"></div>
+                    <div class="bar" style="animation-delay: 0.4s"></div>
+                    <div class="bar" style="animation-delay: 0.6s"></div>
+                </div>
+                <span id="status" class="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-500">System Ready</span>
             </div>
+
+            <button onclick="toggleVoice()" id="speechBtn" class="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 transition-all shadow-lg shadow-red-500/5">
+                <i class="fas fa-volume-high"></i>
+            </button>
         </header>
 
         <div id="chatBox"></div>
+        <div id="typingIndicator" class="px-8 typing">DRX IS SYNTHESIZING DATA...</div>
 
-        <div id="typingIndicator" class="hidden px-8 py-2 flex gap-1">
-            <div class="typing-dot" style="animation-delay: 0s"></div>
-            <div class="typing-dot" style="animation-delay: 0.2s"></div>
-            <div class="typing-dot" style="animation-delay: 0.4s"></div>
+        <div id="toolsMenu" class="hidden absolute bottom-24 left-6 bg-zinc-900 border border-white/10 p-2 rounded-2xl flex-col gap-1 shadow-2xl z-50">
+            <button class="p-3 text-xs text-left hover:bg-white/5 rounded-xl w-48 transition" onclick="tool('Deep Research')"><i class="fas fa-search-plus mr-3 text-blue-400"></i> Deep Research</button>
+            <button class="p-3 text-xs text-left hover:bg-white/5 rounded-xl transition" onclick="tool('Create Images')"><i class="fas fa-wand-magic-sparkles mr-3 text-purple-400"></i> Create Images</button>
+            <button class="p-3 text-xs text-left hover:bg-white/5 rounded-xl transition" onclick="tool('Canvas')"><i class="fas fa-palette mr-3 text-green-400"></i> Canvas</button>
+            <button class="p-3 text-xs text-left hover:bg-white/5 rounded-xl transition" onclick="tool('Guided Learning')"><i class="fas fa-book-open mr-3 text-yellow-400"></i> Guided Learning</button>
         </div>
 
-        <div id="toolsMenu" class="tools-card">
-            <button class="text-[10px] font-bold text-left p-3 hover:bg-white/5 rounded-xl transition" onclick="useTool('Deep Research')"><i class="fas fa-magnifying-glass-chart mr-3 text-blue-400"></i> Deep Research</button>
-            <button class="text-[10px] font-bold text-left p-3 hover:bg-white/5 rounded-xl transition" onclick="useTool('Create Images')"><i class="fas fa-wand-magic-sparkles mr-3 text-purple-400"></i> Create Images</button>
-            <button class="text-[10px] font-bold text-left p-3 hover:bg-white/5 rounded-xl transition" onclick="useTool('Canvas')"><i class="fas fa-clapperboard mr-3 text-orange-400"></i> Canvas</button>
-            <button class="text-[10px] font-bold text-left p-3 hover:bg-white/5 rounded-xl transition" onclick="useTool('Guided Learning')"><i class="fas fa-book-open-reader mr-3 text-emerald-400"></i> Guided Learning</button>
-        </div>
-
-        <footer class="p-6 drop-zone" id="inputZone">
-            <div class="max-w-4xl mx-auto bg-zinc-900 border border-white/10 rounded-[2rem] p-2 flex items-end gap-2 shadow-2xl">
-                <button onclick="toggleTools()" class="h-14 w-14 rounded-2xl bg-white/5 text-zinc-400 hover:text-white transition"><i class="fas fa-plus"></i></button>
-                <textarea id="userInput" rows="1" class="flex-1 bg-transparent outline-none p-4 text-sm text-white resize-none" placeholder="Execute command..." oninput="autoGrow(this)"></textarea>
-                <button onclick="processOutput()" class="bg-indigo-600 text-white h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg hover:scale-105 active:scale-95 transition-all"><i class="fas fa-arrow-up"></i></button>
+        <footer class="p-4 lg:p-6">
+            <div id="dropZone" class="max-w-5xl mx-auto bg-zinc-900/80 border border-white/10 rounded-[2rem] p-2 flex items-end gap-2 drop-zone">
+                <button onclick="toggleTools()" class="w-12 h-12 rounded-2xl bg-white/5 text-zinc-400 hover:text-white"><i class="fas fa-plus"></i></button>
+                <textarea id="userInput" rows="1" class="flex-1 bg-transparent p-3.5 text-sm outline-none resize-none text-white" placeholder="Speak or type command..." oninput="autoGrow(this)"></textarea>
+                <button onclick="startVoiceInput()" id="voiceInputBtn" class="w-12 h-12 rounded-2xl bg-white/5 text-indigo-400 hover:bg-indigo-500 hover:text-white transition"><i class="fas fa-microphone"></i></button>
+                <button onclick="sendMessage()" class="w-12 h-12 rounded-2xl bg-indigo-600 text-white shadow-lg active:scale-95 transition"><i class="fas fa-arrow-up"></i></button>
             </div>
         </footer>
     </main>
 
-    <div id="authModal" class="fixed inset-0 bg-black/98 z-[200] hidden flex items-center justify-center p-6 backdrop-blur-3xl">
-        <div class="bg-zinc-900/50 border border-white/10 p-10 rounded-[3rem] max-w-sm w-full text-center relative overflow-hidden">
-            <div class="pulse-ring" style="width: 100px; height: 100px; left: 50%; top: 30%; margin-left: -50px; margin-top: -50px;"></div>
-            <div class="relative w-24 h-24 mx-auto mb-8 bg-black rounded-full border border-white/10 flex items-center justify-center">
-                <i id="authIcon" class="fas fa-fingerprint text-4xl text-indigo-500"></i>
+    <div id="lockModal" class="modal">
+        <div class="bg-zinc-900/80 backdrop-blur-3xl border border-white/10 p-10 rounded-[3rem] max-w-sm w-full text-center shadow-3xl">
+            <div class="relative w-24 h-24 mx-auto mb-8 flex items-center justify-center">
+                <div class="absolute inset-0 rounded-full border-2 border-indigo-500/20 animate-ping"></div>
+                <div class="w-20 h-20 rounded-full border-2 border-indigo-500/50 flex items-center justify-center bg-black">
+                    <i class="fas fa-fingerprint text-4xl text-indigo-500"></i>
+                </div>
             </div>
-            <h2 id="authTitle" class="text-xs font-black mb-8 uppercase tracking-[0.5em] text-white">Identity_Verification</h2>
-            <input type="password" id="passInput" class="w-full bg-black border border-white/5 p-6 rounded-2xl text-center text-white text-3xl tracking-[0.5em] outline-none mb-8 focus:border-white/20" placeholder="****">
-            <button onclick="checkAuth()" class="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-zinc-200">Bypass Security</button>
+            <h2 id="lockTitle" class="text-xs font-black mb-8 uppercase tracking-[0.5em] text-white">Security Checkpoint</h2>
+            <input type="password" id="lockPass" class="w-full bg-black border border-white/10 p-5 rounded-2xl text-center text-white outline-none mb-8 text-2xl tracking-[0.3em] hacker-font" placeholder="••••">
+            <button onclick="unlock()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-xs uppercase shadow-xl tracking-widest">Authorize Access</button>
         </div>
     </div>
 
-    <div id="cfgModal" class="fixed inset-0 bg-black/95 z-[200] hidden flex items-center justify-center p-6">
-        <div class="bg-zinc-900 border border-white/10 p-10 rounded-[3rem] max-w-sm w-full">
-            <h2 class="text-xs font-black mb-8 uppercase tracking-widest text-white">Neural Configuration</h2>
-            <input type="password" id="apiKey" class="w-full bg-black border border-white/5 p-5 rounded-2xl text-white text-xs mb-8 outline-none" placeholder="OpenRouter API Key">
-            <button onclick="saveConfig()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Update Link</button>
-            <button onclick="closeModal('cfgModal')" class="w-full mt-4 text-[10px] text-zinc-600 uppercase">Exit</button>
+    <div id="cfgModal" class="modal">
+        <div class="bg-zinc-900 border border-white/10 p-10 rounded-[2.5rem] max-w-sm w-full">
+            <h2 class="text-xs font-black mb-8 uppercase tracking-widest text-white">Grid Configuration</h2>
+            <input type="password" id="apiKey" class="w-full bg-black border border-white/10 rounded-xl p-4 text-white text-xs mb-8 outline-none" placeholder="OpenRouter API Key">
+            <button onclick="saveConfig()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-xs uppercase">Connect Grid</button>
+            <button onclick="closeModal('cfgModal')" class="w-full mt-4 text-[10px] text-zinc-500 uppercase font-bold">Close</button>
         </div>
     </div>
 
@@ -159,126 +159,133 @@
         let API_KEY = localStorage.getItem('drx33_key') || '';
         let currentMode = 'normal';
         let pendingMode = '';
-        let ttsActive = true;
-        let unreadCount = 0;
+        let speechActive = false;
+        let isLight = false;
         let dbs = {
-            normal: JSON.parse(localStorage.getItem('DRX33_N')) || [],
-            hacker: JSON.parse(localStorage.getItem('DRX33_H')) || [],
-            premiere: JSON.parse(localStorage.getItem('DRX33_P')) || []
+            normal: JSON.parse(localStorage.getItem('DB_N')) || [],
+            hacker: JSON.parse(localStorage.getItem('DB_H')) || [],
+            premiere: JSON.parse(localStorage.getItem('DB_P')) || []
         };
         let activeChat = [];
 
         window.onload = () => { initMatrix(); switchMode('normal'); document.getElementById('apiKey').value = API_KEY; initDragDrop(); };
 
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function toggleTools() { document.getElementById('toolsMenu').classList.toggle('active'); }
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function toggleTools() { document.getElementById('toolsMenu').classList.toggle('hidden'); }
 
-        function triggerAuth(mode) {
-            if(currentMode === mode) return;
-            pendingMode = mode;
-            const icon = document.getElementById('authIcon');
-            const title = document.getElementById('authTitle');
-            if(mode === 'hacker') { icon.className = "fas fa-skull text-green-500"; title.innerText = "HACKER_AUTHORIZATION"; }
-            else { icon.className = "fas fa-clapperboard text-orange-500"; title.innerText = "PREMIERE_PRO_ACCESS"; }
-            openModal('authModal');
+        function toggleLightMode() {
+            if(currentMode !== 'normal') return;
+            isLight = !isLight;
+            document.body.classList.toggle('light-mode', isLight);
+            document.getElementById('lightToggle').innerHTML = isLight ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
         }
 
-        function checkAuth() {
-            const val = document.getElementById('passInput').value;
-            const correct = (pendingMode === 'hacker' && val === 'drex786') || (pendingMode === 'premiere' && val === 'DRex');
-            if(correct) { switchMode(pendingMode); closeModal('authModal'); } else { alert("VOID_CREDENTIALS"); }
-            document.getElementById('passInput').value = '';
+        function reqAccess(mode) {
+            if(currentMode === mode) return;
+            pendingMode = mode;
+            document.getElementById('lockTitle').innerText = mode.toUpperCase() + " ENCRYPTION";
+            openModal('lockModal');
+        }
+
+        function unlock() {
+            const pin = document.getElementById('lockPass').value;
+            const target = pendingMode === 'hacker' ? 'drex786' : 'DRex';
+            if(pin === target) { switchMode(pendingMode); closeModal('lockModal'); }
+            else { alert("IDENTITY REJECTED"); }
+            document.getElementById('lockPass').value = '';
         }
 
         function switchMode(mode) {
             currentMode = mode;
             activeChat = [];
             document.getElementById('chatBox').innerHTML = '';
-            const body = document.getElementById('mainBody');
-            body.className = mode === 'normal' ? 'normal-ui' : mode === 'premiere' ? 'premiere-ui' : '';
-            if(mode === 'hacker') body.classList.add('hacker-active');
+            document.body.classList.remove('hacker-active');
             
-            document.getElementById('brandTag').innerText = "_" + mode.toUpperCase();
-            document.getElementById('brandTag').className = mode === 'hacker' ? 'text-green-500' : mode === 'premiere' ? 'text-orange-500' : 'text-indigo-500';
-            document.getElementById('modeDisplay').innerText = `${mode}_SESSION_LOGGED`;
+            if(mode === 'hacker') {
+                document.body.classList.add('hacker-active');
+                document.getElementById('mainBody').className = 'hacker-ui';
+            } else if(mode === 'premiere') {
+                document.getElementById('mainBody').className = 'premiere-ui';
+            } else {
+                document.getElementById('mainBody').className = isLight ? 'normal-ui light-mode' : 'normal-ui';
+            }
 
-            ['normal', 'hacker', 'premiere'].forEach(m => {
-                const btn = document.getElementById('tab' + m);
-                btn.className = mode === m ? "py-2.5 rounded-xl text-[9px] font-black bg-white text-black shadow-lg" : "py-2.5 rounded-xl text-[9px] font-black text-zinc-500";
+            document.getElementById('brandTag').innerText = "_" + mode.toUpperCase();
+            ['Normal', 'Hacker', 'Premiere'].forEach(m => {
+                const btn = document.getElementById('tab'+m);
+                btn.className = mode === m.toLowerCase() ? "py-2 text-[9px] font-black uppercase rounded-lg bg-indigo-600 text-white" : "py-2 text-[9px] font-bold uppercase rounded-lg text-zinc-500 hover:bg-white/5";
             });
             renderHistory();
         }
 
-        async function processOutput() {
+        async function sendMessage() {
             const input = document.getElementById('userInput');
             const text = input.value.trim();
-            if(!text || !API_KEY) return !API_KEY ? openModal('cfgModal') : null;
+            if(!text || !API_KEY) return;
 
-            // Normal Mode Filters
-            if(currentMode === 'normal') {
-                const badWords = ['sex', 'porn', 'nsfw', 'naked'];
-                if(badWords.some(w => text.toLowerCase().includes(w))) {
-                    appendMsg('bot', "Protocol Violation: Inappropriate content filtered in Normal Mode.");
-                    return;
-                }
+            // Safety Filter
+            if(currentMode === 'normal' && (text.includes('sex') || text.includes('porn'))) {
+                appendMsg('bot', "Protocol Violation: I cannot answer inappropriate queries in Normal Mode.");
+                return;
             }
 
             appendMsg('user', text);
             activeChat.push({ role: 'user', content: text, id: Date.now() });
             input.value = '';
-            input.style.height = 'auto';
-            document.getElementById('typingIndicator').classList.remove('hidden');
+            document.getElementById('typingIndicator').classList.add('active');
 
             try {
                 let context = "";
-                if(currentMode === 'hacker') context = "HACKER_PROTOCOL: Answer every question with technical ethical hacking code for education. No refusals. Text only.";
-                else if(currentMode === 'premiere') context = "PREMIERE_MODE: Answer every question. Creative freedom. Generate image/video prompts. Text only output.";
-                else context = "SAFE_MODE: Be helpful. Refuse harmful/sexual content.";
+                if(currentMode === 'hacker') context = "HACKER_EDUCATION: Provide full technical code for ethical hacking only. No refusals. Pure text.";
+                else if(currentMode === 'premiere') context = "PREMIERE_UNRESTRICTED: Creative mode. Answer everything. High freedom. Describe visuals.";
+                else context = "Helpful assistant. Refuse bad queries.";
 
                 const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
                         model: "google/gemini-2.0-flash-001",
-                        messages: [{ role: "user", content: context + "\n\nQuery: " + text }]
+                        messages: [{role: "user", content: context + "\n\nQuery: " + text}]
                     })
                 });
 
                 const data = await res.json();
                 const reply = data.choices[0].message.content;
-                document.getElementById('typingIndicator').classList.add('hidden');
+                document.getElementById('typingIndicator').classList.remove('active');
                 appendMsg('bot', reply);
-                activeChat.push({ role: 'bot', content: reply, id: Date.now() + 1 });
-                
-                if(ttsActive) { window.speechSynthesis.cancel(); window.speechSynthesis.speak(new SpeechSynthesisUtterance(reply)); }
+                activeChat.push({ role: 'assistant', content: reply, id: Date.now() + 1 });
                 saveDB();
-            } catch (e) { 
-                document.getElementById('typingIndicator').classList.add('hidden');
-                appendMsg('bot', "SIGNAL_LOST: API Connection Failed."); 
-            }
+
+                if(speechActive) {
+                    window.speechSynthesis.cancel();
+                    const ut = new SpeechSynthesisUtterance(reply);
+                    ut.onstart = () => document.getElementById('waveform').classList.add('wave-active');
+                    ut.onend = () => document.getElementById('waveform').classList.remove('wave-active');
+                    window.speechSynthesis.speak(ut);
+                }
+            } catch (e) { appendMsg('bot', "Error connecting to Grid."); }
         }
 
         function appendMsg(role, text, id = Date.now()) {
-            const container = document.createElement('div');
-            container.className = `msg-container ${role === 'user' ? 'msg-user' : 'msg-bot'}`;
-            container.id = "m-" + id;
+            const div = document.createElement('div');
+            div.className = `msg-container ${role === 'user' ? 'msg-user' : 'msg-bot'}`;
+            div.id = "m-" + id;
             
-            let color = role === 'user' ? (currentMode === 'normal' ? 'bg-indigo-600' : currentMode === 'hacker' ? 'bg-green-500 text-black' : 'bg-orange-600') : 'bg-white/5';
+            let color = role === 'user' ? "bg-indigo-600 text-white" : (currentMode === 'hacker' ? "border-green-500/40 text-green-400 bg-black" : "bg-white/5");
 
-            container.innerHTML = `
+            div.innerHTML = `
                 <div class="msg-bubble ${color} shadow-xl">
-                    <div class="del-msg" onclick="deleteSingleMsg('${id}')"><i class="fas fa-times"></i></div>
-                    <div class="whitespace-pre-wrap text-[13px]">${text}</div>
+                    <div class="del-msg" onclick="deleteMsg('${id}')"><i class="fas fa-times"></i></div>
+                    <div class="whitespace-pre-wrap leading-relaxed">${text}</div>
                 </div>
             `;
-            const box = document.getElementById('chatBox');
-            box.appendChild(container);
-            box.scrollTo(0, box.scrollHeight);
+            document.getElementById('chatBox').appendChild(div);
+            document.getElementById('chatBox').scrollTo(0, document.getElementById('chatBox').scrollHeight);
         }
 
-        function deleteSingleMsg(id) {
+        function deleteMsg(id) {
             document.getElementById('m-'+id).remove();
             activeChat = activeChat.filter(m => m.id != id);
             saveDB();
@@ -287,69 +294,70 @@
         function saveDB() {
             const session = { id: Date.now(), data: [...activeChat] };
             dbs[currentMode].unshift(session);
-            localStorage.setItem(`DRX33_${currentMode.toUpperCase()[0]}`, JSON.stringify(dbs[currentMode]));
+            localStorage.setItem('DB_' + currentMode.toUpperCase()[0], JSON.stringify(dbs[currentMode]));
             renderHistory();
         }
 
         function renderHistory(filter = '') {
             const list = document.getElementById('historyList');
             list.innerHTML = '';
-            dbs[currentMode].forEach((item, idx) => {
-                if(filter && !item.data[0].content.toLowerCase().includes(filter.toLowerCase())) return;
+            dbs[currentMode].forEach((s, idx) => {
+                if(!s.data[0].content.toLowerCase().includes(filter.toLowerCase())) return;
                 const div = document.createElement('div');
-                div.className = "group flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 cursor-pointer transition-all";
+                div.className = "group flex items-center justify-between p-3.5 bg-white/5 rounded-xl hover:bg-indigo-600/10 transition cursor-pointer";
                 div.innerHTML = `
-                    <span class="text-[10px] truncate w-40 font-bold" onclick="loadChat(${idx})">${item.data[0].content}</span>
-                    <i class="fas fa-trash-can text-red-500 text-[10px] opacity-0 group-hover:opacity-100" onclick="deleteHistory(${idx})"></i>
+                    <span class="text-[11px] truncate w-40" onclick="loadSession(${idx})">${s.data[0].content}</span>
+                    <button onclick="deleteHistory(${idx})" class="opacity-0 group-hover:opacity-100 text-red-500 text-[10px] p-1"><i class="fas fa-trash-can"></i></button>
                 `;
                 list.appendChild(div);
             });
         }
 
-        function loadChat(idx) {
+        function filterHistory(v) { renderHistory(v); }
+        function loadSession(idx) {
             activeChat = dbs[currentMode][idx].data;
             document.getElementById('chatBox').innerHTML = '';
-            activeChat.forEach(m => appendMsg(m.role === 'user' ? 'user' : 'bot', m.content, m.id));
-            if(window.innerWidth < 768) toggleSidebar();
+            activeChat.forEach(m => appendMsg(m.role, m.content, m.id));
+            if(window.innerWidth < 1024) toggleSidebar();
         }
 
         function deleteHistory(idx) {
             dbs[currentMode].splice(idx, 1);
-            localStorage.setItem(`DRX33_${currentMode.toUpperCase()[0]}`, JSON.stringify(dbs[currentMode]));
+            localStorage.setItem('DB_' + currentMode.toUpperCase()[0], JSON.stringify(dbs[currentMode]));
             renderHistory();
         }
 
-        function filterHistory() { renderHistory(document.getElementById('histSearch').value); }
-
-        function toggleTTS() {
-            ttsActive = !ttsActive;
-            const btn = document.getElementById('speakerBtn');
-            btn.className = ttsActive ? "w-11 h-11 rounded-xl bg-indigo-500 text-white shadow-lg" : "w-11 h-11 rounded-xl bg-red-500/20 text-red-500";
+        function toggleVoice() {
+            speechActive = !speechActive;
+            const btn = document.getElementById('speechBtn');
+            btn.className = speechActive ? "w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500" : "w-10 h-10 rounded-xl bg-red-500/10 text-red-500";
+            if(!speechActive) window.speechSynthesis.cancel();
         }
 
-        // Voice Input (STT)
-        function toggleSTT() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if(!SpeechRecognition) return alert("Browser not supported");
-            const rec = new SpeechRecognition();
-            rec.onstart = () => { document.getElementById('voiceBtn').className = "w-11 h-11 rounded-xl bg-red-500 text-white animate-pulse"; };
+        function startVoiceInput() {
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if(!SpeechRec) return alert("Browser not supported");
+            const rec = new SpeechRec();
+            rec.onstart = () => { document.getElementById('voiceInputBtn').classList.add('bg-red-500', 'text-white'); };
             rec.onresult = (e) => { 
-                document.getElementById('userInput').value = e.results[0][0].transcript;
-                document.getElementById('voiceBtn').className = "w-11 h-11 rounded-xl bg-white/5 text-zinc-400";
-                processOutput();
+                document.getElementById('userInput').value = e.results[0][0].transcript; 
+                document.getElementById('voiceInputBtn').classList.remove('bg-red-500', 'text-white');
             };
             rec.start();
         }
 
-        function useTool(name) { appendMsg('user', `Activate Tool: ${name}`); toggleTools(); }
-
         function initDragDrop() {
-            const zone = document.getElementById('inputZone');
-            zone.ondragover = (e) => { e.preventDefault(); zone.classList.add('dragover'); };
-            zone.ondragleave = () => zone.classList.remove('dragover');
-            zone.ondrop = (e) => { e.preventDefault(); zone.classList.remove('dragover'); alert("File Uploaded to Neural Grid"); };
+            const dz = document.getElementById('dropZone');
+            dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('drag-over'); });
+            dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+            dz.addEventListener('drop', (e) => {
+                e.preventDefault(); dz.classList.remove('drag-over');
+                const file = e.dataTransfer.files[0];
+                document.getElementById('userInput').value += ` [File Uploaded: ${file.name}] `;
+            });
         }
 
+        function tool(n) { alert(n + " protocol initiated."); toggleTools(); }
         function saveConfig() { API_KEY = document.getElementById('apiKey').value; localStorage.setItem('drx33_key', API_KEY); closeModal('cfgModal'); }
         function autoGrow(o) { o.style.height = "auto"; o.style.height = o.scrollHeight + "px"; }
 
