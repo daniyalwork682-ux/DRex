@@ -3,114 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>D-Rex AI | Zenith v44</title>
+    <title>D-Rex AI | Zenith v45</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
-        :root { --bg: #030712; --accent: #6366f1; --msg-bg: #1f2937; }
-        body { background: var(--bg); color: #f3f4f6; font-family: 'Plus Jakarta Sans', sans-serif; height: 100dvh; display: flex; overflow: hidden; margin: 0; position: relative; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Fira+Code:wght@400;500&display=swap');
+        :root { --bg: #05070a; --accent: #6366f1; --hacker-green: #00ff41; }
+        body { background: var(--bg); color: #e2e8f0; font-family: 'Plus Jakarta Sans', sans-serif; height: 100dvh; display: flex; overflow: hidden; margin: 0; }
         
-        /* Matrix Canvas - Hidden by default */
-        #matrix-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0; transition: opacity 1s; }
-        .hacker-active #matrix-bg { opacity: 0.15; }
+        /* Matrix Canvas */
+        #matrixCanvas { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1s; z-index: 0; }
+        .hacker-active #matrixCanvas { opacity: 0.15; }
 
-        .glass-hud { background: rgba(17, 24, 39, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
-        
-        .sidebar { width: 280px; border-right: 1px solid rgba(255,255,255,0.03); flex-shrink: 0; display: flex; flex-direction: column; z-index: 100; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        @media (max-width: 1024px) { .sidebar { position: fixed; inset-y: 0; left: 0; transform: translateX(-100%); } .sidebar.open { transform: translateX(0); box-shadow: 10px 0 30px rgba(0,0,0,0.7); } }
-        
-        /* History Items */
-        .history-item { font-size: 12px; padding: 10px; border-radius: 10px; cursor: pointer; transition: 0.2s; color: #9ca3af; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
-        .history-item:hover { background: rgba(99, 102, 241, 0.08); color: white; }
-        .del-history { opacity: 0; transition: 0.2s; color: #ef4444; }
-        .history-item:hover .del-history { opacity: 1; }
+        .glass { background: rgba(10, 15, 25, 0.8); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.05); }
+        .sidebar { width: 300px; z-index: 100; transition: transform 0.3s ease; border-right: 1px solid rgba(255,255,255,0.03); }
+        @media (max-width: 1024px) { .sidebar { position: fixed; inset-y: 0; left: 0; transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } }
 
-        /* Chat Area */
-        #chatBox { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scrollbar-width: none; z-index: 10; position: relative;}
-        .msg-container { position: relative; max-width: 80%; display: flex; flex-direction: column; }
+        /* Gemini-like Chat */
+        #chatBox { flex: 1; overflow-y: auto; padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; scrollbar-width: none; z-index: 1; }
+        .msg-container { position: relative; max-width: 85%; animation: fadeIn 0.3s ease; }
         .msg-user { align-self: flex-end; }
-        .msg-bot { align-self: flex-start; }
-        .msg-bubble { padding: 14px 18px; border-radius: 18px; font-size: 0.95rem; line-height: 1.5; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .msg-user .msg-bubble { background: var(--accent); color: white; border-bottom-right-radius: 4px; }
-        .msg-bot .msg-bubble { background: var(--msg-bg); color: #e5e7eb; border-bottom-left-radius: 4px; }
+        .msg-bot { align-self: flex-start; width: 100%; }
+        .bubble { padding: 1rem 1.5rem; border-radius: 1.5rem; line-height: 1.6; position: relative; }
+        .msg-user .bubble { background: var(--accent); color: white; border-bottom-right-radius: 0.2rem; }
+        .msg-bot .bubble { background: rgba(30, 41, 59, 0.5); border-bottom-left-radius: 0.2rem; }
         
-        /* Message Cross */
-        .del-msg { position: absolute; top: -5px; right: -5px; background: #ef4444; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; opacity: 0; transition: 0.2s; color: white; z-index: 10; }
+        /* Bubble Cross */
+        .del-msg { position: absolute; top: -8px; right: -8px; background: #ef4444; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; opacity: 0; transition: 0.2s; color: white; border: 2px solid var(--bg); }
         .msg-container:hover .del-msg { opacity: 1; }
 
-        /* Input Area */
-        .input-wrapper { background: var(--msg-bg); border-radius: 28px; padding: 8px 15px; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.05); }
+        /* Listen Button */
+        .listen-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; font-weight: 700; color: #94a3b8; cursor: pointer; padding: 5px 12px; border-radius: 20px; background: rgba(255,255,255,0.05); transition: 0.2s; border: 1px solid transparent; }
+        .listen-btn:hover { background: rgba(99, 102, 241, 0.2); color: white; border-color: var(--accent); }
+
+        /* Live Mode Panel (Gemini Live Style) */
+        #livePanel { position: fixed; inset: 0; background: rgba(5,7,10,0.95); z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .live-circle { width: 150px; height: 150px; border-radius: 50%; background: var(--accent); filter: blur(20px); opacity: 0.6; animation: pulseLive 2s infinite; }
+        @keyframes pulseLive { 0% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.3); opacity: 0.7; } 100% { transform: scale(1); opacity: 0.4; } }
+
+        .history-item { padding: 12px; border-radius: 12px; font-size: 13px; cursor: pointer; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+        .history-item:hover { background: rgba(255,255,255,0.05); color: white; }
         
-        .logo-d { font-weight: 800; font-size: 1.8rem; background: linear-gradient(to right, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-        /* Listen Button Styles */
-        .listen-btn { margin-top: 8px; font-size: 11px; color: #a5b4fc; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-        .listen-btn:hover { color: white; }
-
-        /* Hacker Text Style */
-        .hacker-text { font-family: 'Courier New', monospace; color: #00ff00 !important; text-shadow: 0 0 5px #00ff00; }
-        .msg-bot.hacker-mode .msg-bubble { background: rgba(0,0,0,0.7); border: 1px solid #00ff00; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body id="mainBody">
+<body id="body">
 
-    <canvas id="matrix-bg"></canvas>
+    <canvas id="matrixCanvas"></canvas>
 
-    <aside id="sidebar" class="sidebar glass-hud">
-        <div class="p-5 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <span class="logo-d">D</span><span class="font-bold text-lg tracking-tight">Rex v44</span>
-            </div>
+    <div id="livePanel">
+        <div class="live-circle"></div>
+        <h2 class="mt-8 text-2xl font-bold tracking-widest text-white">LIVE SESSION</h2>
+        <p id="liveTranscript" class="mt-4 text-indigo-300 italic px-10">Listening for your voice...</p>
+        <button onclick="stopLiveMode()" class="mt-12 w-16 h-16 rounded-full bg-red-600 flex items-center justify-center text-white"><i class="fas fa-times text-xl"></i></button>
+    </div>
+
+    <aside id="sidebar" class="sidebar glass flex flex-col">
+        <div class="p-6 flex items-center justify-between">
+            <span class="text-2xl font-black bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">D-REX</span>
             <button onclick="toggleSidebar()" class="lg:hidden text-zinc-500"><i class="fas fa-times"></i></button>
         </div>
         
-        <div class="px-3 space-y-1">
-            <button onclick="switchMode('normal')" id="tabnormal" class="w-full text-left p-3 rounded-xl text-xs font-bold transition flex items-center gap-3"><i class="fas fa-comment-dots"></i> Normal</button>
-            <button onclick="reqAccess('hacker')" id="tabhacker" class="w-full text-left p-3 rounded-xl text-xs font-bold transition flex items-center gap-3 text-green-400"><i class="fas fa-terminal"></i> Hacker</button>
-            <button onclick="reqAccess('premiere')" id="tabpremiere" class="w-full text-left p-3 rounded-xl text-xs font-bold transition flex items-center gap-3 text-orange-400"><i class="fas fa-film"></i> Premiere</button>
+        <div class="p-4 space-y-2">
+            <button onclick="switchMode('normal')" id="btn-normal" class="w-full text-left p-3 rounded-xl text-xs font-bold transition flex items-center gap-3"><i class="fas fa-leaf"></i> Normal Mode</button>
+            <button onclick="reqAccess('hacker')" id="btn-hacker" class="w-full text-left p-3 rounded-xl text-xs font-bold transition flex items-center gap-3 text-green-500"><i class="fas fa-skull"></i> Hacker Mode</button>
+            <button onclick="reqAccess('premiere')" id="btn-premiere" class="w-full text-left p-3 rounded-xl text-xs font-bold transition flex items-center gap-3 text-orange-400"><i class="fas fa-crown"></i> Premiere Pro</button>
         </div>
-        
-        <div class="flex-1 overflow-y-auto p-3" id="historyList"></div>
-        
-        <div class="p-3 border-t border-white/5">
-            <button onclick="openModal('cfgModal')" class="w-full text-left p-3 rounded-xl text-xs font-bold text-zinc-500 hover:bg-white/5"><i class="fas fa-cog mr-3"></i>API Settings</button>
+
+        <div class="flex-1 overflow-y-auto p-4" id="historyList"></div>
+
+        <div class="p-4 border-t border-white/5">
+            <button onclick="openModal('cfgModal')" class="w-full text-left p-3 rounded-xl text-xs font-bold text-zinc-500"><i class="fas fa-cog mr-3"></i> Neural Settings</button>
         </div>
     </aside>
 
-    <main id="mainContent" class="flex-1 flex flex-col min-w-0 relative z-10">
-        <header class="h-16 flex items-center justify-between px-4 glass-hud border-b border-white/5">
+    <main class="flex-1 flex flex-col relative min-w-0">
+        <header class="h-16 flex items-center justify-between px-6 glass border-b border-white/5">
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="text-zinc-400 hover:text-white"><i class="fas fa-bars"></i></button>
-                <div id="statusLine" class="text-[10px] font-black uppercase tracking-[3px] text-indigo-400">System</div>
+                <button onclick="toggleSidebar()" class="text-zinc-400"><i class="fas fa-bars"></i></button>
+                <div id="statusLabel" class="text-[10px] font-black uppercase tracking-[3px] text-indigo-400">Ready</div>
             </div>
-            <div class="w-8 h-8 rounded-full bg-indigo-600/20 flex items-center justify-center text-indigo-400 text-xs font-bold">D</div>
+            <div class="flex gap-4">
+                <button onclick="startLiveMode()" class="text-indigo-400 text-sm font-bold flex items-center gap-2"><i class="fas fa-bullseye"></i> LIVE</button>
+            </div>
         </header>
 
         <div id="chatBox"></div>
 
-        <footer class="p-4">
-            <div class="max-w-4xl mx-auto input-wrapper shadow-2xl">
-                <textarea id="userInput" rows="1" class="flex-1 bg-transparent p-2 text-sm outline-none resize-none text-white placeholder-zinc-500" placeholder="Type a message or use voice..."></textarea>
-                <button onclick="startVoiceSession()" class="w-10 h-10 rounded-full text-zinc-400 hover:text-white transition flex items-center justify-center"><i class="fas fa-microphone"></i></button>
-                <button onclick="sendMessage()" class="w-10 h-10 rounded-full bg-indigo-600 text-white hover:scale-105 transition flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
+        <footer class="p-6">
+            <div class="max-w-4xl mx-auto glass rounded-[2.5rem] p-2 flex items-center gap-2 border border-white/10 shadow-2xl">
+                <textarea id="userInput" rows="1" class="flex-1 bg-transparent p-3 text-sm outline-none resize-none text-white" placeholder="Message D-Rex..."></textarea>
+                <button onclick="startVoiceInput()" class="w-10 h-10 rounded-full text-zinc-500 hover:text-white"><i class="fas fa-microphone"></i></button>
+                <button onclick="sendMessage()" class="w-12 h-12 rounded-full bg-indigo-600 text-white shadow-lg"><i class="fas fa-paper-plane"></i></button>
             </div>
         </footer>
     </main>
 
-    <div id="lockModal" class="fixed inset-0 bg-black/90 z-[500] hidden items-center justify-center backdrop-blur-sm">
-        <div class="glass-hud p-8 rounded-3xl max-w-sm w-full text-center">
-            <h2 class="text-xs font-black mb-6 uppercase tracking-widest text-zinc-400" id="lockTitle">Secure Mode</h2>
-            <input type="password" id="lockPass" class="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-center text-white outline-none mb-6 text-xl" placeholder="••••">
-            <button onclick="unlock()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-black text-xs uppercase">Unlock</button>
+    <div id="lockModal" class="fixed inset-0 bg-black/98 z-[500] hidden items-center justify-center">
+        <div class="glass p-10 rounded-[3rem] max-w-sm w-full text-center">
+            <h2 class="text-xs font-black mb-8 uppercase tracking-widest text-zinc-500" id="lockTitle">Verification Required</h2>
+            <input type="password" id="lockPass" class="w-full bg-black border border-white/10 p-4 rounded-2xl text-center text-white text-2xl mb-6 outline-none" placeholder="••••">
+            <button onclick="unlock()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest">Verify</button>
         </div>
     </div>
 
-    <div id="cfgModal" class="fixed inset-0 bg-black/90 z-[500] hidden items-center justify-center backdrop-blur-sm">
-        <div class="glass-hud p-8 rounded-3xl max-w-sm w-full">
-            <h2 class="text-xs font-black mb-6 uppercase tracking-widest text-center">API Key</h2>
-            <input type="password" id="apiKeyInput" class="w-full bg-black border border-white/10 rounded-xl p-4 text-white text-xs mb-4 outline-none" placeholder="Paste Key">
-            <button onclick="saveSettings()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-black text-xs uppercase">Save</button>
+    <div id="cfgModal" class="fixed inset-0 bg-black/95 z-[500] hidden items-center justify-center">
+        <div class="glass p-8 rounded-3xl max-w-sm w-full">
+            <h2 class="text-xs font-black mb-6 uppercase tracking-widest text-center">API Config</h2>
+            <input type="password" id="apiKeyInput" class="w-full bg-black border border-white/10 rounded-xl p-4 text-white text-xs mb-4 outline-none" placeholder="OpenRouter API Key">
+            <button onclick="saveSettings()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-xs uppercase">Connect</button>
+            <button onclick="closeModal('cfgModal')" class="w-full mt-4 text-[10px] text-zinc-600 font-bold uppercase">Back</button>
         </div>
     </div>
 
@@ -118,116 +120,104 @@
         let API_KEY = localStorage.getItem('drx_key') || '';
         let currentMode = 'normal';
         let pendingMode = '';
-        // Separate history by mode
-        let chatSessions = JSON.parse(localStorage.getItem('drx_history_v5') || '{"normal":[], "hacker":[], "premiere":[]}');
+        let historyData = JSON.parse(localStorage.getItem('drx_history_v5') || '[]');
+        let recognition;
 
-        window.onload = () => { if(!API_KEY) openModal('cfgModal'); switchMode('normal'); initSwipe(); initMatrix(); };
+        window.onload = () => { 
+            if(!API_KEY) openModal('cfgModal'); 
+            switchMode('normal'); 
+            initMatrix();
+            initSwipe();
+        };
 
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function saveSettings() { API_KEY = document.getElementById('apiKeyInput').value; localStorage.setItem('drx_key', API_KEY); closeModal('cfgModal'); }
 
-        // --- Matrix Effect ---
-        const canvas = document.getElementById('matrix-bg');
-        const ctx = canvas.getContext('2d');
-        let columns, drops;
+        // --- Matrix Animation ---
         function initMatrix() {
-            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-            columns = canvas.width / 20;
-            drops = Array(Math.floor(columns)).fill(1);
-        }
-        function drawMatrix() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#0F0'; ctx.font = '15px monospace';
-            for (let i = 0; i < drops.length; i++) {
-                const text = Math.floor(Math.random() * 2);
-                ctx.fillText(text, i * 20, drops[i] * 20);
-                if (drops[i] * 20 > canvas.height && Math.random() > 0.975) drops[i] = 0;
-                drops[i]++;
+            const canvas = document.getElementById('matrixCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const letters = "01";
+            const fontSize = 14;
+            const columns = canvas.width / fontSize;
+            const drops = Array(Math.floor(columns)).fill(1);
+            function draw() {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#00ff41";
+                ctx.font = fontSize + "px Fira Code";
+                drops.forEach((y, i) => {
+                    const text = letters[Math.floor(Math.random() * letters.length)];
+                    ctx.fillText(text, i * fontSize, y * fontSize);
+                    if (y * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                    drops[i]++;
+                });
             }
-        }
-        setInterval(drawMatrix, 50);
-        window.onresize = initMatrix;
-
-        // --- History & Logic ---
-        function saveChatSession(title, messages) {
-            const sessionId = Date.now();
-            chatSessions[currentMode].unshift({ id: sessionId, title: title, messages: messages });
-            localStorage.setItem('drx_history_v5', JSON.stringify(chatSessions));
-            renderHistory();
+            setInterval(draw, 33);
         }
 
-        function renderHistory() {
-            const list = document.getElementById('historyList');
-            const filtered = chatSessions[currentMode];
-            list.innerHTML = `<div class="text-[9px] text-zinc-600 font-black uppercase p-2 tracking-[2px] mb-2">${currentMode}</div>`;
-            filtered.forEach(session => {
-                const item = document.createElement('div');
-                item.className = "history-item";
-                item.innerHTML = `
-                    <span class="truncate flex-1" onclick="loadSession(${session.id})">${session.title}</span>
-                    <i class="fas fa-trash-alt del-history" onclick="deleteSession(${session.id})"></i>
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        function loadSession(id) {
-            const session = chatSessions[currentMode].find(s => s.id === id);
-            if(session) {
-                document.getElementById('chatBox').innerHTML = '';
-                session.messages.forEach(msg => appendMsg(msg.role, msg.content));
-                if(window.innerWidth < 1024) toggleSidebar();
-            }
-        }
-
-        function deleteSession(id) {
-            chatSessions[currentMode] = chatSessions[currentMode].filter(s => s.id !== id);
-            localStorage.setItem('drx_history_v5', JSON.stringify(chatSessions));
-            renderHistory();
-            document.getElementById('chatBox').innerHTML = '';
-        }
-
-        // --- Auth ---
+        // --- Modes & Auth ---
         function reqAccess(mode) { pendingMode = mode; document.getElementById('lockTitle').innerText = mode.toUpperCase() + " PROTOCOL"; openModal('lockModal'); }
         function unlock() {
             const pin = document.getElementById('lockPass').value;
             const target = (pendingMode === 'hacker') ? 'drex786' : 'DRex';
             if(pin === target) { switchMode(pendingMode); closeModal('lockModal'); }
-            else { alert("Denied"); }
+            else { alert("Access Denied"); }
             document.getElementById('lockPass').value = '';
         }
 
         function switchMode(mode) {
             currentMode = mode;
-            document.getElementById('statusLine').innerText = mode.toUpperCase();
+            document.getElementById('statusLabel').innerText = mode.toUpperCase();
+            document.getElementById('body').className = (mode === 'hacker') ? 'hacker-active' : '';
             document.getElementById('chatBox').innerHTML = '';
-            
-            // Toggle Matrix Background
-            if(mode === 'hacker') document.getElementById('mainBody').classList.add('hacker-active');
-            else document.getElementById('mainBody').classList.remove('hacker-active');
-
             renderHistory();
-            
-            // Highlight active tab
             ['normal', 'hacker', 'premiere'].forEach(m => {
-                const btn = document.getElementById('tab' + m);
-                btn.style.background = (m === mode) ? 'rgba(99, 102, 241, 0.1)' : 'transparent';
+                const btn = document.getElementById('btn-' + m);
+                btn.className = (m === mode) ? "w-full text-left p-3 rounded-xl text-xs font-bold bg-indigo-600 text-white" : "w-full text-left p-3 rounded-xl text-xs font-bold text-zinc-500 hover:bg-white/5";
             });
             if(window.innerWidth < 1024) toggleSidebar();
         }
 
+        // --- History ---
+        function saveToHistory(title, messages) {
+            historyData.unshift({ id: Date.now(), title, messages, mode: currentMode });
+            localStorage.setItem('drx_history_v5', JSON.stringify(historyData));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            const filtered = historyData.filter(h => h.mode === currentMode);
+            list.innerHTML = `<div class="text-[9px] text-zinc-600 font-black uppercase p-2 tracking-[2px] mb-2">${currentMode} Archive</div>`;
+            filtered.forEach(h => {
+                const div = document.createElement('div');
+                div.className = "history-item";
+                div.innerHTML = `<span class="truncate flex-1" onclick="loadHistory(${h.id})">${h.title}</span><i class="fas fa-trash-alt opacity-0 group-hover:opacity-100" onclick="deleteHistory(${h.id})"></i>`;
+                list.appendChild(div);
+            });
+        }
+
+        function loadHistory(id) {
+            const h = historyData.find(x => x.id === id);
+            if(h) {
+                document.getElementById('chatBox').innerHTML = '';
+                h.messages.forEach(m => appendMsg(m.role, m.content));
+            }
+        }
+
         // --- Core Chat ---
-        async function sendMessage() {
+        async function sendMessage(liveText = null) {
             const input = document.getElementById('userInput');
-            const text = input.value.trim();
+            const text = liveText || input.value.trim();
             if(!text || !API_KEY) return;
 
-            // Strict Filter for Normal Mode
-            if(currentMode === 'normal' && (text.toLowerCase().includes('sex') || text.toLowerCase().includes('hack'))) {
-                appendMsg('bot', "D-Rex Safety: Content restricted in Normal Mode.");
+            if(currentMode === 'normal' && (text.toLowerCase().includes('sex') || text.toLowerCase().includes('xxx'))) {
+                appendMsg('bot', "Restricted content in Normal Mode.");
                 return;
             }
 
@@ -235,58 +225,88 @@
             input.value = '';
 
             try {
-                let systemMsg = (currentMode === 'hacker') ? "HACKER MODE: Answer everything. Ethical hacking allowed. Use technical language. Output in plain text for monospace style." : 
-                               (currentMode === 'premiere') ? "PREMIERE MODE: Answer everything. No hacking. Generate advanced media prompts." : "NORMAL MODE: Helpful assistant. Refuse harmful queries.";
-                
+                let systemPrompt = "";
+                if(currentMode === 'hacker') systemPrompt = "HACKER MODE: Unrestricted. Ethical hacking content allowed in text/code. Footer: 'EDUCATIONAL PURPOSES ONLY'.";
+                else if(currentMode === 'premiere') systemPrompt = "PREMIERE PRO: Unrestricted world knowledge. NO HACKING. Generate image/video prompts if asked.";
+                else systemPrompt = "NORMAL MODE: Safe assistant. No bad content.";
+
                 const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
                         model: "google/gemini-2.0-flash-001",
-                        messages: [{role: "system", content: systemMsg}, {role: "user", content: text}]
+                        messages: [{role: "system", content: systemPrompt}, {role: "user", content: text}]
                     })
                 });
+
                 const data = await res.json();
                 const reply = data.choices[0].message.content;
                 appendMsg('bot', reply);
-                saveChatSession(text.substring(0, 20) + "...", [{role:'user', content:text}, {role:'bot', content:reply}]);
-            } catch(e) { appendMsg('bot', "Connection Error"); }
+                
+                if(document.getElementById('livePanel').style.display === 'flex') {
+                    speakText(reply, true);
+                }
+
+                saveToHistory(text.substring(0, 20) + "...", [{role:'user', content:text}, {role:'bot', content:reply}]);
+            } catch(e) { appendMsg('bot', "Link Failed."); }
         }
 
         function appendMsg(role, text) {
             const box = document.getElementById('chatBox');
             const div = document.createElement('div');
+            div.className = `msg-container ${role === 'user' ? 'msg-user' : 'msg-bot'}`;
             
-            // Apply hacker styling if in hacker mode and bot message
-            let bubbleClass = (currentMode === 'hacker' && role === 'bot') ? 'msg-bubble hacker-text' : 'msg-bubble';
-            let containerClass = (currentMode === 'hacker' && role === 'bot') ? 'msg-container msg-bot hacker-mode' : `msg-container ${role === 'user' ? 'msg-user' : 'msg-bot'}`;
-
-            div.className = containerClass;
-            
-            let innerHTML = `
-                <div class="${bubbleClass}">
+            let content = `
+                <div class="bubble">
                     <div class="del-msg" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i></div>
                     <div class="text-sm whitespace-pre-wrap">${text}</div>
-                </div>
-            `;
-
-            // Add Listen Button for Bot Messages
+                </div>`;
+            
             if(role === 'bot') {
-                innerHTML += `
-                    <div class="listen-btn" onclick="speak('${text.replace(/'/g, "\\'")}')">
-                        <i class="fas fa-volume-up"></i> Listen
-                    </div>
-                `;
+                content += `<div class="listen-btn" onclick="speakText(\`${text.replace(/[`'"]/g, '')}\`)"><i class="fas fa-volume-up"></i> Listen</div>`;
             }
             
-            div.innerHTML = innerHTML;
+            div.innerHTML = content;
             box.appendChild(div);
-            box.scrollTo(0, box.scrollHeight);
+            box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
         }
 
-        function speak(t) { 
-            window.speechSynthesis.cancel(); 
-            window.speechSynthesis.speak(new SpeechSynthesisUtterance(t)); 
+        // --- Voice & Live Mode ---
+        function speakText(text, autoContinueLive = false) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.onend = () => {
+                if(autoContinueLive) startLiveRecognition();
+            };
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function startLiveMode() {
+            document.getElementById('livePanel').style.display = 'flex';
+            startLiveRecognition();
+        }
+
+        function stopLiveMode() {
+            document.getElementById('livePanel').style.display = 'none';
+            if(recognition) recognition.stop();
+            window.speechSynthesis.cancel();
+        }
+
+        function startLiveRecognition() {
+            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US';
+            recognition.onresult = (e) => {
+                const text = e.results[0][0].transcript;
+                document.getElementById('liveTranscript').innerText = text;
+                sendMessage(text);
+            };
+            recognition.start();
+        }
+
+        function startVoiceInput() {
+            const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            rec.onresult = (e) => { document.getElementById('userInput').value = e.results[0][0].transcript; };
+            rec.start();
         }
 
         function initSwipe() {
@@ -295,14 +315,7 @@
             document.addEventListener('touchend', e => {
                 let diff = e.changedTouches[0].clientX - startX;
                 if(startX < 50 && diff > 100) toggleSidebar();
-                if(startX > 200 && diff < -100) document.getElementById('sidebar').classList.remove('open');
             });
-        }
-
-        function startVoiceSession() {
-            const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            rec.onresult = (e) => { document.getElementById('userInput').value = e.results[0][0].transcript; sendMessage(); };
-            rec.start();
         }
     </script>
 </body>
