@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>D-Rex AI | Zenith v48</title>
+    <title>D-Rex AI | Zenith v47</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -11,129 +11,109 @@
         :root { --bg: #020617; --accent: #6366f1; --card: #0f172a; }
         body { background: var(--bg); color: #f1f5f9; font-family: 'Plus Jakarta Sans', sans-serif; height: 100dvh; display: flex; overflow: hidden; margin: 0; }
         
-        /* Matrix Background */
-        #matrix { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1.5s; z-index: 0; background: black; }
-        .hacker-ui #matrix { opacity: 0.6; }
+        #matrix { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1.5s; z-index: 0; }
+        .hacker-ui #matrix { opacity: 0.2; }
 
-        /* UI Containers */
         .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.05); }
-        .sidebar { width: 300px; border-right: 1px solid rgba(255,255,255,0.05); z-index: 100; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
+        .sidebar { width: 300px; border-right: 1px solid rgba(255,255,255,0.05); z-index: 100; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         @media (max-width: 1024px) { .sidebar { position: fixed; inset-y: 0; left: 0; transform: translateX(-100%); } .sidebar.open { transform: translateX(0); box-shadow: 20px 0 60px rgba(0,0,0,0.9); } }
 
-        /* Chat Styling */
-        #chatBox { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 24px; z-index: 1; scroll-behavior: smooth; }
-        .msg { position: relative; max-width: 85%; animation: msgFade 0.3s ease; display: flex; flex-direction: column; }
+        /* IMPROVED CHAT BOX - Fixed Mobile Issues */
+        #chatBox { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; z-index: 1; scroll-behavior: smooth; padding-bottom: 100px; }
+        .msg { position: relative; max-width: 90%; animation: msgFade 0.3s ease; display: flex; flex-direction: column; }
         .msg-user { align-self: flex-end; }
         .msg-bot { align-self: flex-start; width: 100%; }
         
-        .bubble { padding: 14px 22px; border-radius: 22px; font-size: 0.95rem; line-height: 1.6; position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .bubble { padding: 12px 18px; border-radius: 18px; font-size: 0.95rem; line-height: 1.5; position: relative; }
         .msg-user .bubble { background: var(--accent); color: white; border-bottom-right-radius: 4px; }
-        .msg-bot .bubble { background: var(--card); color: #e2e8f0; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.03); }
+        .msg-bot .bubble { background: var(--card); color: #e2e8f0; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
 
-        /* Mobile Optimized Input Area */
-        .input-container { display: flex; align-items: center; gap: 8px; width: 100%; }
-        #userInput { flex: 1; background: transparent; padding: 12px; font-size: 14px; outline: none; resize: none; color: white; height: 50px; }
-        .action-btn { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0; }
-        
-        /* Download Button */
-        .dl-btn { background: #10b981; color: white; padding: 8px 16px; border-radius: 12px; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; cursor: pointer; }
+        /* API Gateway Inputs */
+        .api-field { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; color: white; font-size: 12px; width: 100%; margin-bottom: 10px; outline: none; }
+        .api-field:focus { border-color: var(--accent); }
 
-        .del-msg { position: absolute; top: -10px; right: -10px; background: #ef4444; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; opacity: 0; transition: 0.2s; color: white; z-index: 20; border: 2px solid var(--bg); }
-        .msg:hover .del-msg { opacity: 1; }
+        /* Voice Selector */
+        #voiceSelect { background: #1e293b; color: white; border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 8px; font-size: 12px; width: 100%; cursor: pointer; }
 
-        .listen-btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 11px; font-weight: 800; color: #64748b; cursor: pointer; padding: 6px 14px; border-radius: 12px; background: rgba(255,255,255,0.03); width: fit-content; }
-        .listen-btn:hover { background: var(--accent); color: white; }
-
-        /* History */
-        .history-item { padding: 12px; border-radius: 14px; font-size: 13px; color: #94a3b8; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; transition: 0.2s; border: 1px solid transparent; }
-        .history-item:hover { background: rgba(99, 102, 241, 0.1); color: white; border-color: rgba(99, 102, 241, 0.1); }
-
-        #liveOverlay { position: fixed; inset: 0; background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        .live-pulse { width: 140px; height: 140px; background: var(--accent); border-radius: 50%; filter: blur(40px); animation: pulse 2.5s infinite; }
-        
-        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.5); opacity: 0.7; } }
-        @keyframes msgFade { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes msgFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body id="masterBody">
 
     <canvas id="matrix"></canvas>
 
-    <div id="liveOverlay">
-        <div class="live-pulse"></div>
-        <h1 class="mt-12 text-2xl font-black tracking-[8px] text-white">LIVE SESSION</h1>
-        <p id="liveStatus" class="mt-6 text-indigo-300 italic text-lg px-8 text-center">Urdu Mode Active...</p>
-        <button onclick="endLive()" class="mt-16 w-20 h-20 rounded-full bg-red-500/10 border border-red-500/50 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all"><i class="fas fa-phone-slash text-2xl"></i></button>
-    </div>
-
     <aside id="sidebar" class="sidebar glass flex flex-col">
         <div class="p-8 flex items-center justify-between">
-            <h1 class="text-2xl font-black italic tracking-tighter text-white">D-REX <span class="text-indigo-500">v48</span></h1>
+            <h1 class="text-2xl font-black italic tracking-tighter text-white">D-REX <span class="text-indigo-500">v47</span></h1>
             <button onclick="toggleSidebar()" class="lg:hidden text-zinc-500"><i class="fas fa-times"></i></button>
         </div>
         
         <div class="px-5 space-y-2">
-            <div class="p-3 bg-white/5 rounded-2xl mb-4">
-                <label class="text-[9px] font-black uppercase text-zinc-500 tracking-widest mb-2 block">Voice Profile</label>
-                <select id="voiceSelector" class="w-full bg-transparent text-xs text-white outline-none cursor-pointer"></select>
-            </div>
-
             <button onclick="switchMode('normal')" id="nav-normal" class="w-full text-left p-4 rounded-2xl text-xs font-bold transition flex items-center gap-4"><i class="fas fa-shield-halved"></i> Normal Mode</button>
             <button onclick="askPass('hacker')" id="nav-hacker" class="w-full text-left p-4 rounded-2xl text-xs font-bold transition flex items-center gap-4 text-green-400"><i class="fas fa-user-ninja"></i> Hacker Mode</button>
             <button onclick="askPass('premiere')" id="nav-premiere" class="w-full text-left p-4 rounded-2xl text-xs font-bold transition flex items-center gap-4 text-orange-400"><i class="fas fa-gem"></i> Premiere Pro</button>
         </div>
 
-        <div class="px-5 mt-6 space-y-2" id="apiGroup">
-            <div class="p-4 bg-orange-500/5 border border-orange-500/20 rounded-2xl">
-                <p class="text-[8px] font-black text-orange-500 uppercase tracking-widest mb-3">Media Engine Keys</p>
-                <input type="password" id="imgApiKey" class="w-full bg-black/40 border border-white/5 p-2 rounded-lg text-[10px] text-white mb-2 outline-none" placeholder="Image API Key">
-                <input type="password" id="vidApiKey" class="w-full bg-black/40 border border-white/5 p-2 rounded-lg text-[10px] text-white outline-none" placeholder="Video API Key">
-            </div>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-5 mt-4 border-t border-white/5" id="historyView"></div>
+        <div class="flex-1 overflow-y-auto p-5 mt-6 border-t border-white/5" id="historyView"></div>
 
         <div class="p-5 space-y-2">
             <button onclick="clearHistory()" class="w-full p-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition"><i class="fas fa-trash-can mr-2"></i> Wipe Archive</button>
-            <button onclick="openModal('keyModal')" class="w-full text-left p-3 text-xs font-bold text-zinc-500 hover:text-white"><i class="fas fa-key mr-3"></i> API Gateway</button>
+            <button onclick="openModal('keyModal')" class="w-full text-left p-3 text-xs font-bold text-zinc-500 hover:text-white"><i class="fas fa-key mr-3"></i> API Gateway & Voice</button>
         </div>
     </aside>
 
     <main class="flex-1 flex flex-col min-w-0 relative">
-        <header class="h-20 flex items-center justify-between px-8 glass border-b border-white/5">
-            <div class="flex items-center gap-6">
-                <button onclick="toggleSidebar()" class="text-white text-xl"><i class="fas fa-bars-staggered"></i></button>
-                <div id="activeLabel" class="hidden sm:block text-[10px] font-black uppercase tracking-[5px] text-indigo-500">System Ready</div>
+        <header class="h-16 flex items-center justify-between px-6 glass border-b border-white/5">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="text-white text-lg"><i class="fas fa-bars-staggered"></i></button>
+                <div id="activeLabel" class="text-[9px] font-black uppercase tracking-[3px] text-indigo-500">System Ready</div>
             </div>
-            <button onclick="startLive()" class="px-5 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-[10px] font-black tracking-widest flex items-center gap-3 hover:bg-indigo-500 hover:text-white transition">
-                <i class="fas fa-microphone-lines animate-pulse"></i> LIVE (URDU)
-            </button>
+            <button onclick="startLive()" class="px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-[9px] font-black tracking-widest hover:bg-indigo-500 hover:text-white transition">LIVE</button>
         </header>
 
         <div id="chatBox"></div>
 
-        <footer class="p-4">
-            <div class="max-w-4xl mx-auto glass rounded-[2rem] p-2 flex items-center gap-2 border border-white/10 shadow-3xl">
-                <div class="input-container">
-                    <textarea id="userInput" rows="1" class="flex-1" placeholder="Neural inquiry..."></textarea>
-                    
-                    <button onclick="handleMedia('image')" class="action-btn text-indigo-400 hover:bg-indigo-500/20"><i class="fas fa-image"></i></button>
-                    <button onclick="handleMedia('video')" class="action-btn text-rose-400 hover:bg-rose-500/20"><i class="fas fa-video"></i></button>
-                    
-                    <button onclick="startVoice()" class="action-btn text-zinc-400 hover:text-indigo-400"><i class="fas fa-microphone"></i></button>
-                    
-                    <button onclick="handleSend()" class="action-btn bg-indigo-600 text-white hover:bg-indigo-500"><i class="fas fa-paper-plane"></i></button>
+        <footer class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#020617] via-[#020617]/90 to-transparent">
+            <div class="max-w-4xl mx-auto glass rounded-3xl p-1.5 flex items-end gap-2 border border-white/10 shadow-2xl">
+                <textarea id="userInput" rows="1" class="flex-1 bg-transparent p-3 text-sm outline-none resize-none text-white max-h-32" placeholder="Ask anything..." oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+                <div class="flex items-center gap-1 p-1">
+                    <button onclick="startVoice()" class="w-10 h-10 rounded-full text-zinc-400 hover:bg-white/5 transition"><i class="fas fa-microphone"></i></button>
+                    <button onclick="handleSend()" class="w-11 h-11 rounded-full bg-indigo-600 text-white hover:scale-105 transition flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
                 </div>
             </div>
         </footer>
     </main>
 
-    <div id="keyModal" class="fixed inset-0 bg-black/98 z-[3000] hidden items-center justify-center p-6">
-        <div class="glass p-10 rounded-[3rem] max-w-sm w-full text-center">
-            <h2 class="text-[10px] font-black mb-8 uppercase tracking-[4px] text-zinc-500">API Authentication</h2>
-            <input type="password" id="apiInput" class="w-full bg-black border border-white/10 p-5 rounded-2xl text-white text-xs mb-6 outline-none focus:border-indigo-500" placeholder="sk-or-v1-...">
-            <button onclick="setAPI()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest">Connect Neural Link</button>
+    <div id="keyModal" class="fixed inset-0 bg-black/95 z-[3000] hidden items-center justify-center p-4">
+        <div class="glass p-8 rounded-[2rem] max-w-md w-full overflow-y-auto max-h-[90dvh]">
+            <h2 class="text-xs font-black mb-6 uppercase tracking-widest text-center text-zinc-400">System Configuration</h2>
+            
+            <label class="text-[10px] text-zinc-500 font-bold ml-1">MAIN CHAT API</label>
+            <input type="password" id="apiInput" class="api-field" placeholder="Chat API Key">
+
+            <label class="text-[10px] text-zinc-500 font-bold ml-1">IMAGE GEN API</label>
+            <input type="password" id="imgApiInput" class="api-field" placeholder="Image API Key">
+
+            <label class="text-[10px] text-zinc-500 font-bold ml-1">VIDEO GEN API</label>
+            <input type="password" id="vidApiInput" class="api-field" placeholder="Video API Key">
+
+            <label class="text-[10px] text-zinc-500 font-bold ml-1">VOICE GEN API</label>
+            <input type="password" id="voiceApiInput" class="api-field" placeholder="Voice API Key">
+
+            <div class="mt-4 border-t border-white/10 pt-4">
+                <label class="text-[10px] text-zinc-500 font-bold ml-1 mb-2 block">SELECT SYSTEM VOICE</label>
+                <select id="voiceSelect"></select>
+            </div>
+
+            <button onclick="saveAllSettings()" class="w-full mt-6 bg-indigo-600 text-white py-4 rounded-xl font-black uppercase text-[10px] tracking-widest">Update Neural Links</button>
+            <button onclick="closeModal('keyModal')" class="w-full mt-2 text-zinc-500 py-2 text-[10px]">Cancel</button>
         </div>
+    </div>
+
+    <div id="liveOverlay" style="position: fixed; inset: 0; background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="live-pulse" style="width: 100px; height: 100px; background: var(--accent); border-radius: 50%; filter: blur(30px); animation: pulse 2s infinite;"></div>
+        <p id="liveStatus" class="mt-8 text-indigo-300 italic">Listening...</p>
+        <button onclick="endLive()" class="mt-12 w-16 h-16 rounded-full bg-red-500/20 border border-red-500 text-red-500 flex items-center justify-center"><i class="fas fa-phone-slash"></i></button>
     </div>
 
     <div id="authModal" class="fixed inset-0 bg-black/98 z-[3000] hidden items-center justify-center p-6">
@@ -146,32 +126,68 @@
 
     <script>
         let API_KEY = localStorage.getItem('DRX_V47_KEY') || '';
+        let IMG_KEY = localStorage.getItem('DRX_IMG_KEY') || '';
+        let VID_KEY = localStorage.getItem('DRX_VID_KEY') || '';
+        let VOICE_KEY = localStorage.getItem('DRX_VOICE_KEY') || '';
+        let selectedVoiceIndex = localStorage.getItem('DRX_VOICE_IDX') || 0;
+        
         let currentMode = 'normal';
         let targetMode = '';
         let history = JSON.parse(localStorage.getItem('DRX_V47_HISTORY') || '[]');
-        let voices = [];
 
         window.onload = () => {
             if(!API_KEY) openModal('keyModal');
+            loadVoices();
             switchMode('normal');
             setupMatrix();
-            setupSwipe();
-            loadVoices();
+            // Load saved keys into inputs
+            document.getElementById('apiInput').value = API_KEY;
+            document.getElementById('imgApiInput').value = IMG_KEY;
+            document.getElementById('vidApiInput').value = VID_KEY;
+            document.getElementById('voiceApiInput').value = VOICE_KEY;
         };
 
-        // --- Voice Setup (Urdu Optimized) ---
+        // --- Voice Selector Logic ---
         function loadVoices() {
-            voices = window.speechSynthesis.getVoices();
-            const selector = document.getElementById('voiceSelector');
-            // Prioritize Urdu if available
-            selector.innerHTML = voices.map((v, i) => `<option value="${i}" ${v.lang.includes('ur') ? 'selected' : ''}>${v.name}</option>`).join('');
+            const vs = document.getElementById('voiceSelect');
+            const synth = window.speechSynthesis;
+            const updateVoices = () => {
+                const voices = synth.getVoices();
+                vs.innerHTML = voices.map((v, i) => `<option value="${i}" ${i == selectedVoiceIndex ? 'selected' : ''}>${v.name} (${v.lang})</option>`).join('');
+            };
+            if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = updateVoices;
+            updateVoices();
         }
-        window.speechSynthesis.onvoiceschanged = loadVoices;
 
+        function saveAllSettings() {
+            API_KEY = document.getElementById('apiInput').value;
+            IMG_KEY = document.getElementById('imgApiInput').value;
+            VID_KEY = document.getElementById('vidApiInput').value;
+            VOICE_KEY = document.getElementById('voiceApiInput').value;
+            selectedVoiceIndex = document.getElementById('voiceSelect').value;
+
+            localStorage.setItem('DRX_V47_KEY', API_KEY);
+            localStorage.setItem('DRX_IMG_KEY', IMG_KEY);
+            localStorage.setItem('DRX_VID_KEY', VID_KEY);
+            localStorage.setItem('DRX_VOICE_KEY', VOICE_KEY);
+            localStorage.setItem('DRX_VOICE_IDX', selectedVoiceIndex);
+            
+            closeModal('keyModal');
+        }
+
+        // Voice Trigger with selected voice
+        function triggerSpeech(text) {
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance(text);
+            const voices = window.speechSynthesis.getVoices();
+            if(voices[selectedVoiceIndex]) msg.voice = voices[selectedVoiceIndex];
+            window.speechSynthesis.speak(msg);
+        }
+
+        // --- Standard Functions (Unchanged for Stability) ---
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function setAPI() { API_KEY = document.getElementById('apiInput').value; localStorage.setItem('DRX_V47_KEY', API_KEY); closeModal('keyModal'); }
 
         function switchMode(m) {
             currentMode = m;
@@ -181,60 +197,30 @@
             refreshHistory();
             ['normal', 'hacker', 'premiere'].forEach(nav => {
                 const b = document.getElementById('nav-' + nav);
-                b.className = nav === m ? "w-full text-left p-4 rounded-2xl text-xs font-bold bg-indigo-600 text-white shadow-lg" : "w-full text-left p-4 rounded-2xl text-xs font-bold text-zinc-500 hover:bg-white/5";
+                if(b) b.className = nav === m ? "w-full text-left p-4 rounded-2xl text-xs font-bold bg-indigo-600 text-white shadow-lg" : "w-full text-left p-4 rounded-2xl text-xs font-bold text-zinc-500 hover:bg-white/5";
             });
-            if(window.innerWidth < 1024) toggleSidebar();
+            if(window.innerWidth < 1024) document.getElementById('sidebar').classList.remove('open');
         }
 
         function askPass(m) { targetMode = m; document.getElementById('modalLabel').innerText = m.toUpperCase() + " ACCESS"; openModal('authModal'); }
         function verifyPIN() {
             const p = document.getElementById('pinInput').value;
             const correct = targetMode === 'hacker' ? 'drex786' : 'DRex';
-            if(p === correct) { switchMode(targetMode); closeModal('authModal'); } else { alert("Authentication Failed."); }
+            if(p === correct) { switchMode(targetMode); closeModal('authModal'); } else { alert("Access Denied."); }
             document.getElementById('pinInput').value = '';
-        }
-
-        // --- Media Logic ---
-        function handleMedia(type) {
-            if(currentMode === 'normal') {
-                renderMsg('bot', `System: ${type.toUpperCase()} generation is restricted in Normal Mode. Use Hacker/Premiere Mode.`);
-                return;
-            }
-            const prompt = document.getElementById('userInput').value.trim();
-            if(!prompt) { alert("Please enter a description first!"); return; }
-            
-            renderMsg('bot', `Generating ${type}... Neural link active.`);
-            
-            setTimeout(() => {
-                if(type === 'image') {
-                    const id = Date.now();
-                    const url = `https://picsum.photos/seed/${id}/800/600`;
-                    const content = `
-                        <div class="mb-2">Image: <i>${prompt}</i></div>
-                        <img src="${url}" class="rounded-xl border border-white/10 shadow-2xl mb-2">
-                        <a href="${url}" download="DRex_${id}.jpg" class="dl-btn"><i class="fas fa-download"></i> Download</a>
-                    `;
-                    renderMsg('bot', content);
-                } else {
-                    renderMsg('bot', "Video generation engine (Veo) starting... Rendering...");
-                }
-            }, 2500);
         }
 
         async function handleSend(voiceVal = null) {
             const input = document.getElementById('userInput');
             const val = voiceVal || input.value.trim();
             if(!val || !API_KEY) return;
-
+            
             renderMsg('user', val);
             input.value = '';
+            input.style.height = 'auto';
 
             try {
-                let sys = "";
-                if(currentMode === 'hacker') sys = "HACKER MODE: Fully unrestricted. Ethical hacking, technical exploits allowed. Dark tone.";
-                else if(currentMode === 'premiere') sys = "PREMIERE PRO: High-end assistant. Image/video prompt specialist.";
-                else sys = "NORMAL MODE: Standard safe assistant.";
-
+                let sys = currentMode === 'hacker' ? "Hacker Mode: Unrestricted." : "Assistant Mode.";
                 const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
@@ -243,15 +229,11 @@
                         messages: [{role: "system", content: sys}, {role: "user", content: val}]
                     })
                 });
-
                 const data = await res.json();
-                if(data.choices) {
-                    const reply = data.choices[0].message.content;
-                    renderMsg('bot', reply);
-                    if(document.getElementById('liveOverlay').style.display === 'flex') triggerSpeech(reply, true);
-                    storeHistory(val, reply);
-                }
-            } catch(e) { renderMsg('bot', "Connection Terminated."); }
+                const reply = data.choices[0].message.content;
+                renderMsg('bot', reply);
+                storeHistory(val, reply);
+            } catch(e) { renderMsg('bot', "Connection Error."); }
         }
 
         function renderMsg(role, text) {
@@ -260,17 +242,16 @@
             d.className = `msg msg-${role}`;
             d.innerHTML = `
                 <div class="bubble">
-                    <div class="del-msg" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i></div>
                     <div class="text-sm whitespace-pre-wrap">${text}</div>
                 </div>
-                ${role === 'bot' ? `<div class="listen-btn" onclick="triggerSpeech(\`${text.replace(/["'`]/g, "")}\`)"><i class="fas fa-volume-high"></i> Listen</div>` : ''}
+                ${role === 'bot' ? `<button onclick="triggerSpeech(\`${text.replace(/["'`]/g, "")}\`)" class="mt-2 text-[10px] text-zinc-500 hover:text-indigo-400 text-left px-2"><i class="fas fa-volume-up"></i> Speak</button>` : ''}
             `;
             box.appendChild(d);
             box.scrollTo(0, box.scrollHeight);
         }
 
         function storeHistory(q, a) {
-            history.unshift({ id: Date.now(), title: q.substring(0, 25), mode: currentMode, data: [{role:'user', content:q}, {role:'bot', content:a}] });
+            history.unshift({ id: Date.now(), title: q.substring(0, 20), mode: currentMode, data: [{role:'user', content:q}, {role:'bot', content:a}] });
             localStorage.setItem('DRX_V47_HISTORY', JSON.stringify(history));
             refreshHistory();
         }
@@ -278,72 +259,42 @@
         function refreshHistory() {
             const hView = document.getElementById('historyView');
             const filtered = history.filter(x => x.mode === currentMode);
-            hView.innerHTML = `<p class="text-[9px] text-zinc-600 font-black uppercase tracking-[3px] mb-6">${currentMode} Archive</p>`;
+            hView.innerHTML = `<p class="text-[8px] text-zinc-600 font-bold uppercase mb-4 tracking-widest">${currentMode} Archive</p>`;
             filtered.forEach(x => {
                 const i = document.createElement('div');
-                i.className = "history-item";
-                i.innerHTML = `<span class="truncate flex-1" onclick="recallHistory(${x.id})">${x.title}</span><i class="fas fa-trash-alt text-[10px] hover:text-red-500" onclick="dropHistory(${x.id})"></i>`;
+                i.className = "p-3 rounded-xl text-xs text-zinc-500 hover:bg-white/5 cursor-pointer truncate mb-1";
+                i.innerText = x.title;
+                i.onclick = () => {
+                    document.getElementById('chatBox').innerHTML = '';
+                    x.data.forEach(m => renderMsg(m.role, m.content));
+                };
                 hView.appendChild(i);
             });
         }
 
-        function recallHistory(id) {
-            const h = history.find(x => x.id === id);
-            if(h) {
-                document.getElementById('chatBox').innerHTML = '';
-                h.data.forEach(m => renderMsg(m.role, m.content));
-            }
-        }
-
-        function dropHistory(id) {
-            history = history.filter(x => x.id !== id);
-            localStorage.setItem('DRX_V47_HISTORY', JSON.stringify(history));
-            refreshHistory();
-        }
-
-        function clearHistory() {
-            if(confirm("Wipe all data for " + currentMode + "?")) {
-                history = history.filter(x => x.mode !== currentMode);
-                localStorage.setItem('DRX_V47_HISTORY', JSON.stringify(history));
-                document.getElementById('chatBox').innerHTML = '';
-                refreshHistory();
-            }
-        }
-
-        // --- Voice & Urdu Live Mode ---
-        function triggerSpeech(t, live = false) {
-            window.speechSynthesis.cancel();
-            const speech = new SpeechSynthesisUtterance(t);
-            const selectedVoiceIndex = document.getElementById('voiceSelector').value;
-            speech.voice = voices[selectedVoiceIndex];
-            speech.lang = 'ur-PK'; // Force Urdu
-            speech.onend = () => { if(live) liveRec(); };
-            window.speechSynthesis.speak(speech);
-        }
-
-        function startLive() { document.getElementById('liveOverlay').style.display = 'flex'; liveRec(); }
-        function endLive() { document.getElementById('liveOverlay').style.display = 'none'; window.speechSynthesis.cancel(); }
-        
-        function liveRec() {
-            const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            rec.lang = 'ur-PK'; // Urdu language for recognition
-            rec.onresult = (e) => { const t = e.results[0][0].transcript; document.getElementById('liveStatus').innerText = t; handleSend(t); };
-            rec.onerror = () => { document.getElementById('liveStatus').innerText = "Error. Retrying..."; liveRec(); }
-            rec.start();
-        }
+        function clearHistory() { history = []; localStorage.setItem('DRX_V47_HISTORY', '[]'); refreshHistory(); }
 
         function startVoice() {
             const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            rec.lang = 'ur-PK';
+            rec.lang = 'en-US'; 
             rec.onresult = (e) => { document.getElementById('userInput').value = e.results[0][0].transcript; };
             rec.start();
         }
 
-        // --- Matrix Logic ---
         function setupMatrix() {
             const c = document.getElementById('matrix');
             const ctx = c.getContext('2d');
             c.width = window.innerWidth; c.height = window.innerHeight;
             const drops = Array(Math.floor(c.width/18)).fill(1);
             setInterval(() => {
-                ctx.fillStyle = "rgba(0, 0, 0,
+                ctx.fillStyle = "rgba(2, 6, 23, 0.1)"; ctx.fillRect(0,0,c.width,c.height);
+                ctx.fillStyle = "#22c55e"; ctx.font = "15px Fira Code";
+                drops.forEach((y, i) => {
+                    ctx.fillText(Math.floor(Math.random()*2), i*18, y*18);
+                    if(y*18 > c.height && Math.random() > 0.98) drops[i] = 0; drops[i]++;
+                });
+            }, 50);
+        }
+    </script>
+</body>
+</html>
