@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>D-Rex AI | Zenith v37</title>
+    <title>D-Rex AI | Zenith v38</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -61,6 +61,10 @@
         </div>
         
         <div class="flex-1 overflow-y-auto p-3" id="historyList"></div>
+
+        <div class="p-3 border-t border-white/5">
+            <button onclick="openModal('cfgModal')" class="w-full text-left p-3 rounded-xl text-xs font-bold text-zinc-400 hover:bg-white/5"><i class="fas fa-cog mr-3"></i> Neural Settings</button>
+        </div>
     </aside>
 
     <div id="mainContent">
@@ -107,19 +111,26 @@
         </div>
     </div>
 
+    <div id="cfgModal" class="fixed inset-0 bg-black/90 z-[500] hidden items-center justify-center">
+        <div class="glass-hud p-8 rounded-[2rem] max-w-sm w-full">
+            <h2 class="text-xs font-black mb-6 uppercase tracking-widest text-white text-center">Neural Link Setup</h2>
+            <input type="password" id="apiKeyInput" class="w-full bg-black border border-white/10 rounded-xl p-4 text-white text-xs mb-4 outline-none focus:border-indigo-500" placeholder="Enter OpenRouter API Key">
+            <button onclick="saveSettings()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-xs uppercase shadow-xl">Save Settings</button>
+            <button onclick="closeModal('cfgModal')" class="w-full mt-4 text-[9px] text-zinc-500 font-bold uppercase">Return to HUD</button>
+        </div>
+    </div>
+
     <script>
         // --- State Management ---
         let API_KEY = localStorage.getItem('drx_key') || '';
         let currentMode = 'normal';
         let pendingMode = '';
-        let dbs = { normal: [], hacker: [], premiere: [] };
         let activeChat = [];
 
         // --- Init ---
         window.onload = () => {
             if(!API_KEY) {
-                API_KEY = prompt("Enter OpenRouter API Key:");
-                localStorage.setItem('drx_key', API_KEY);
+                openModal('cfgModal');
             }
             switchMode('normal');
             initSwipe();
@@ -127,6 +138,8 @@
 
         // --- Sidebar & Navigation ---
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         
         function initSwipe() {
             let startX = 0;
@@ -136,6 +149,14 @@
                 if(startX < 50 && endX - startX > 100) toggleSidebar(); // Swipe open
                 if(startX > 250 && startX - endX > 100) toggleSidebar(); // Swipe close
             });
+        }
+
+        // --- Settings ---
+        function saveSettings() {
+            API_KEY = document.getElementById('apiKeyInput').value;
+            localStorage.setItem('drx_key', API_KEY);
+            closeModal('cfgModal');
+            alert("Settings Saved!");
         }
 
         // --- Mode Management ---
@@ -166,13 +187,17 @@
                 const btn = document.getElementById('tab' + m);
                 btn.className = m === mode ? "w-full text-left p-3 rounded-xl text-xs font-bold bg-indigo-600 text-white mb-1" : "w-full text-left p-3 rounded-xl text-xs font-bold text-zinc-400 hover:bg-white/5 mb-1";
             });
+            if(window.innerWidth < 1024) toggleSidebar();
         }
 
         // --- Chat Logic ---
         async function sendMessage() {
             const input = document.getElementById('userInput');
             const text = input.value.trim();
-            if(!text) return;
+            if(!text || !API_KEY) {
+                if(!API_KEY) openModal('cfgModal');
+                return;
+            }
             
             // Normal Mode Filter
             if(currentMode === 'normal' && (text.toLowerCase().includes('sex') || text.toLowerCase().includes('porn'))) {
@@ -196,7 +221,7 @@
                 const reply = data.choices[0].message.content;
                 appendMsg('bot', reply);
                 if(currentMode === 'hacker') document.getElementById('codeArea').innerText = reply;
-            } catch(e) { appendMsg('bot', "Error"); }
+            } catch(e) { appendMsg('bot', "Error: Check API Key"); }
         }
 
         function appendMsg(role, text) {
