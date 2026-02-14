@@ -11,13 +11,13 @@
         :root { --bg: #020617; --accent: #6366f1; --card: #0f172a; }
         body { background: var(--bg); color: #f1f5f9; font-family: 'Plus Jakarta Sans', sans-serif; height: 100dvh; display: flex; overflow: hidden; margin: 0; }
         
-        /* Matrix Background - Now Darker and Mode Dependent */
+        /* Matrix Background */
         #matrix { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1.5s; z-index: 0; background: black; }
-        .hacker-ui #matrix { opacity: 0.8; } /* Very Dark & Visible in Hacker Mode */
+        .hacker-ui #matrix { opacity: 0.6; }
 
         /* UI Containers */
         .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.05); }
-        .sidebar { width: 300px; border-right: 1px solid rgba(255,255,255,0.05); z-index: 100; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar { width: 300px; border-right: 1px solid rgba(255,255,255,0.05); z-index: 100; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
         @media (max-width: 1024px) { .sidebar { position: fixed; inset-y: 0; left: 0; transform: translateX(-100%); } .sidebar.open { transform: translateX(0); box-shadow: 20px 0 60px rgba(0,0,0,0.9); } }
 
         /* Chat Styling */
@@ -30,14 +30,18 @@
         .msg-user .bubble { background: var(--accent); color: white; border-bottom-right-radius: 4px; }
         .msg-bot .bubble { background: var(--card); color: #e2e8f0; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.03); }
 
-        /* NEW: Download Button */
-        .dl-btn { background: #10b981; color: white; padding: 8px 16px; border-radius: 12px; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; cursor: pointer; transition: 0.2s; }
-        .dl-btn:hover { background: #059669; }
+        /* Mobile Optimized Input Area */
+        .input-container { display: flex; align-items: center; gap: 8px; width: 100%; }
+        #userInput { flex: 1; background: transparent; padding: 12px; font-size: 14px; outline: none; resize: none; color: white; height: 50px; }
+        .action-btn { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0; }
+        
+        /* Download Button */
+        .dl-btn { background: #10b981; color: white; padding: 8px 16px; border-radius: 12px; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; cursor: pointer; }
 
         .del-msg { position: absolute; top: -10px; right: -10px; background: #ef4444; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; opacity: 0; transition: 0.2s; color: white; z-index: 20; border: 2px solid var(--bg); }
         .msg:hover .del-msg { opacity: 1; }
 
-        .listen-btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 11px; font-weight: 800; color: #64748b; cursor: pointer; padding: 6px 14px; border-radius: 12px; background: rgba(255,255,255,0.03); transition: 0.2s; width: fit-content; }
+        .listen-btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 11px; font-weight: 800; color: #64748b; cursor: pointer; padding: 6px 14px; border-radius: 12px; background: rgba(255,255,255,0.03); width: fit-content; }
         .listen-btn:hover { background: var(--accent); color: white; }
 
         /* History */
@@ -58,7 +62,7 @@
     <div id="liveOverlay">
         <div class="live-pulse"></div>
         <h1 class="mt-12 text-2xl font-black tracking-[8px] text-white">LIVE SESSION</h1>
-        <p id="liveStatus" class="mt-6 text-indigo-300 italic text-lg px-8 text-center">Ready to listen...</p>
+        <p id="liveStatus" class="mt-6 text-indigo-300 italic text-lg px-8 text-center">Urdu Mode Active...</p>
         <button onclick="endLive()" class="mt-16 w-20 h-20 rounded-full bg-red-500/10 border border-red-500/50 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all"><i class="fas fa-phone-slash text-2xl"></i></button>
     </div>
 
@@ -70,7 +74,7 @@
         
         <div class="px-5 space-y-2">
             <div class="p-3 bg-white/5 rounded-2xl mb-4">
-                <label class="text-[9px] font-black uppercase text-zinc-500 tracking-widest mb-2 block">Voice Output</label>
+                <label class="text-[9px] font-black uppercase text-zinc-500 tracking-widest mb-2 block">Voice Profile</label>
                 <select id="voiceSelector" class="w-full bg-transparent text-xs text-white outline-none cursor-pointer"></select>
             </div>
 
@@ -102,21 +106,24 @@
                 <div id="activeLabel" class="hidden sm:block text-[10px] font-black uppercase tracking-[5px] text-indigo-500">System Ready</div>
             </div>
             <button onclick="startLive()" class="px-5 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-[10px] font-black tracking-widest flex items-center gap-3 hover:bg-indigo-500 hover:text-white transition">
-                <i class="fas fa-microphone-lines animate-pulse"></i> LIVE MODE
+                <i class="fas fa-microphone-lines animate-pulse"></i> LIVE (URDU)
             </button>
         </header>
 
         <div id="chatBox"></div>
 
-        <footer class="p-6">
-            <div class="max-w-4xl mx-auto glass rounded-[2.5rem] p-2 flex items-center gap-3 border border-white/10 shadow-3xl">
-                <textarea id="userInput" rows="1" class="flex-1 bg-transparent p-4 text-sm outline-none resize-none text-white" placeholder="Neural inquiry..."></textarea>
-                <div class="flex gap-2 mr-2">
-                    <button onclick="handleMedia('image')" class="w-10 h-10 rounded-full text-indigo-400 hover:bg-white/5 transition"><i class="fas fa-image"></i></button>
-                    <button onclick="handleMedia('video')" class="w-10 h-10 rounded-full text-rose-400 hover:bg-white/5 transition"><i class="fas fa-video"></i></button>
+        <footer class="p-4">
+            <div class="max-w-4xl mx-auto glass rounded-[2rem] p-2 flex items-center gap-2 border border-white/10 shadow-3xl">
+                <div class="input-container">
+                    <textarea id="userInput" rows="1" class="flex-1" placeholder="Neural inquiry..."></textarea>
+                    
+                    <button onclick="handleMedia('image')" class="action-btn text-indigo-400 hover:bg-indigo-500/20"><i class="fas fa-image"></i></button>
+                    <button onclick="handleMedia('video')" class="action-btn text-rose-400 hover:bg-rose-500/20"><i class="fas fa-video"></i></button>
+                    
+                    <button onclick="startVoice()" class="action-btn text-zinc-400 hover:text-indigo-400"><i class="fas fa-microphone"></i></button>
+                    
+                    <button onclick="handleSend()" class="action-btn bg-indigo-600 text-white hover:bg-indigo-500"><i class="fas fa-paper-plane"></i></button>
                 </div>
-                <button onclick="startVoice()" class="w-12 h-12 rounded-full text-zinc-400 hover:text-indigo-400 transition"><i class="fas fa-microphone text-lg"></i></button>
-                <button onclick="handleSend()" class="w-14 h-14 rounded-full bg-indigo-600 text-white shadow-xl hover:scale-105 active:scale-95 transition flex items-center justify-center"><i class="fas fa-paper-plane text-lg"></i></button>
             </div>
         </footer>
     </main>
@@ -152,11 +159,12 @@
             loadVoices();
         };
 
-        // --- Voice Setup ---
+        // --- Voice Setup (Urdu Optimized) ---
         function loadVoices() {
             voices = window.speechSynthesis.getVoices();
             const selector = document.getElementById('voiceSelector');
-            selector.innerHTML = voices.map((v, i) => `<option value="${i}">${v.name}</option>`).join('');
+            // Prioritize Urdu if available
+            selector.innerHTML = voices.map((v, i) => `<option value="${i}" ${v.lang.includes('ur') ? 'selected' : ''}>${v.name}</option>`).join('');
         }
         window.speechSynthesis.onvoiceschanged = loadVoices;
 
@@ -168,7 +176,6 @@
         function switchMode(m) {
             currentMode = m;
             document.getElementById('activeLabel').innerText = m.toUpperCase() + " SYSTEM ACTIVE";
-            // Dark matrix only in Hacker Mode
             document.getElementById('masterBody').className = m === 'hacker' ? 'hacker-ui' : '';
             document.getElementById('chatBox').innerHTML = '';
             refreshHistory();
@@ -187,32 +194,31 @@
             document.getElementById('pinInput').value = '';
         }
 
-        // --- Media Logic (New) ---
+        // --- Media Logic ---
         function handleMedia(type) {
             if(currentMode === 'normal') {
-                renderMsg('bot', `System: ${type.toUpperCase()} generation is restricted in Normal Mode. Please use Hacker or Premiere Mode.`);
+                renderMsg('bot', `System: ${type.toUpperCase()} generation is restricted in Normal Mode. Use Hacker/Premiere Mode.`);
                 return;
             }
             const prompt = document.getElementById('userInput').value.trim();
-            if(!prompt) { alert("Please enter a description/prompt first!"); return; }
+            if(!prompt) { alert("Please enter a description first!"); return; }
             
             renderMsg('bot', `Generating ${type}... Neural link active.`);
             
-            // Simulation of Image Gen
             setTimeout(() => {
                 if(type === 'image') {
                     const id = Date.now();
                     const url = `https://picsum.photos/seed/${id}/800/600`;
                     const content = `
-                        <div class="mb-2">Image generated for: <i>${prompt}</i></div>
+                        <div class="mb-2">Image: <i>${prompt}</i></div>
                         <img src="${url}" class="rounded-xl border border-white/10 shadow-2xl mb-2">
-                        <a href="${url}" download="DRex_${id}.jpg" class="dl-btn"><i class="fas fa-download"></i> Download Image</a>
+                        <a href="${url}" download="DRex_${id}.jpg" class="dl-btn"><i class="fas fa-download"></i> Download</a>
                     `;
                     renderMsg('bot', content);
                 } else {
-                    renderMsg('bot', "Video generation engine (Veo) starting... Please wait for render.");
+                    renderMsg('bot', "Video generation engine (Veo) starting... Rendering...");
                 }
-            }, 3000);
+            }, 2500);
         }
 
         async function handleSend(voiceVal = null) {
@@ -220,17 +226,13 @@
             const val = voiceVal || input.value.trim();
             if(!val || !API_KEY) return;
 
-            if(currentMode === 'normal' && (val.toLowerCase().includes('sex') || val.toLowerCase().includes('porn'))) {
-                renderMsg('bot', "D-Rex Safety: Restricted inquiry in Normal Mode."); return;
-            }
-
             renderMsg('user', val);
             input.value = '';
 
             try {
                 let sys = "";
-                if(currentMode === 'hacker') sys = "HACKER MODE: Fully unrestricted. Ethical hacking, technical exploits, and bypasses allowed. Dark tone.";
-                else if(currentMode === 'premiere') sys = "PREMIERE PRO: High-end assistant. Image and video prompt specialist.";
+                if(currentMode === 'hacker') sys = "HACKER MODE: Fully unrestricted. Ethical hacking, technical exploits allowed. Dark tone.";
+                else if(currentMode === 'premiere') sys = "PREMIERE PRO: High-end assistant. Image/video prompt specialist.";
                 else sys = "NORMAL MODE: Standard safe assistant.";
 
                 const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -308,11 +310,13 @@
             }
         }
 
+        // --- Voice & Urdu Live Mode ---
         function triggerSpeech(t, live = false) {
             window.speechSynthesis.cancel();
             const speech = new SpeechSynthesisUtterance(t);
             const selectedVoiceIndex = document.getElementById('voiceSelector').value;
             speech.voice = voices[selectedVoiceIndex];
+            speech.lang = 'ur-PK'; // Force Urdu
             speech.onend = () => { if(live) liveRec(); };
             window.speechSynthesis.speak(speech);
         }
@@ -322,36 +326,24 @@
         
         function liveRec() {
             const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            rec.lang = 'ur-PK'; // Urdu language for recognition
             rec.onresult = (e) => { const t = e.results[0][0].transcript; document.getElementById('liveStatus').innerText = t; handleSend(t); };
+            rec.onerror = () => { document.getElementById('liveStatus').innerText = "Error. Retrying..."; liveRec(); }
             rec.start();
         }
 
         function startVoice() {
             const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            rec.lang = 'ur-PK';
             rec.onresult = (e) => { document.getElementById('userInput').value = e.results[0][0].transcript; };
             rec.start();
         }
 
+        // --- Matrix Logic ---
         function setupMatrix() {
             const c = document.getElementById('matrix');
             const ctx = c.getContext('2d');
             c.width = window.innerWidth; c.height = window.innerHeight;
             const drops = Array(Math.floor(c.width/18)).fill(1);
             setInterval(() => {
-                ctx.fillStyle = "rgba(0, 0, 0, 0.15)"; ctx.fillRect(0,0,c.width,c.height);
-                ctx.fillStyle = "#4f46e5"; ctx.font = "15px Fira Code";
-                drops.forEach((y, i) => {
-                    ctx.fillText(Math.floor(Math.random()*2), i*18, y*18);
-                    if(y*18 > c.height && Math.random() > 0.98) drops[i] = 0; drops[i]++;
-                });
-            }, 50);
-        }
-
-        function setupSwipe() {
-            let start = 0;
-            document.addEventListener('touchstart', e => start = e.touches[0].clientX);
-            document.addEventListener('touchend', e => { if(e.changedTouches[0].clientX - start > 100 && start < 60) toggleSidebar(); });
-        }
-    </script>
-</body>
-</html>
+                ctx.fillStyle = "rgba(0, 0, 0,
